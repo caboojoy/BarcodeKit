@@ -297,46 +297,94 @@
         * @param {string|null} [bgForce]   null이면 STATE.bgColor 사용,
         *                                  문자열이면 강제 배경색 (JPG 흰색 강제 등)
         * @returns {Promise<HTMLCanvasElement>}
+        *
+        * ── EAN-13 다운로드 깨짐 수정 (3가지 원인 동시 해결) ──
+        *
+        * 원인 1. 외부 폰트 미로드
+        *   SVG를 Canvas로 변환할 때 격리된 렌더링 컨텍스트에서는
+        *   Google Fonts(DM Mono) 등 외부 폰트가 로드되지 않습니다.
+        *   폰트 메트릭이 달라지면 텍스트 위치가 틀어지고,
+        *   EAN-13의 가드바(guard bar)가 캔버스 밖으로 밀려납니다.
+        *   → document.fonts.ready 대기 후 시스템 monospace로 교체
+        *
+        * 원인 2. SVG width/height 속성 누락
+        *   속성이 없으면 브라우저가 임의 크기로 렌더링해 이미지가 잘립니다.
+        *   → 직렬화 후 명시적으로 width/height 삽입
+        *
+        * 원인 3. Canvas 재사용 시 이전 픽셀 잔존
+        *   이전 변환 결과가 남아 있으면 겹쳐 보입니다.
+        *   → clearRect로 초기화 후 배경 채우기
         */
-    function svgToCanvas(scale = 2, bgForce = null) {
+    async function svgToCanvas(scale = 2, bgForce = null) {
+    
+        /* ── Fix 1: 모든 폰트 로드 완료까지 대기 ── */
+        await document.fonts.ready;
+    
         return new Promise((resolve, reject) => {
         try {
             const svgEl = DOM.svg;
     
-            /* SVG 크기 계산
-            * Bug #3 수정: JsBarcode는 SVG에 width/height 속성을 직접 설정합니다.
-            * getAttribute로 먼저 읽고, 없으면 viewBox → getBoundingClientRect 순으로 fallback.
-            */
+            /* SVG 크기 계산 — getAttribute 우선, viewBox → BCR 순 fallback */
             const attrW   = parseFloat(svgEl.getAttribute('width')  || '0');
             const attrH   = parseFloat(svgEl.getAttribute('height') || '0');
-            const svgRect = svgEl.getBoundingClientRect();
-            const svgW    = attrW  || svgEl.viewBox?.baseVal?.width  || svgRect.width  || 300;
-            const svgH    = attrH  || svgEl.viewBox?.baseVal?.height || svgRect.height || 150;
+            const vbW     = svgEl.viewBox?.baseVal?.width  || 0;
+            const vbH     = svgEl.viewBox?.baseVal?.height || 0;
+            const bcrRect = svgEl.getBoundingClientRect();
+            const svgW    = attrW || vbW || bcrRect.width  || 300;
+            const svgH    = attrH || vbH || bcrRect.height || 150;
     
-            /* SVG 문자열 직렬화 */
+            /* SVG 직렬화 */
             const serializer = new XMLSerializer();
             let svgStr = serializer.serializeToString(svgEl);
     
-            /* xmlns 속성 보장 */
+            /* xmlns 보장 */
             if (!svgStr.includes('xmlns=')) {
             svgStr = svgStr.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
             }
     
+            /* ── Fix 2: width/height 속성 명시 (없으면 추가) ──
+            * Canvas 렌더러가 SVG 크기를 정확히 인식하도록 보장합니다.
+            * 특히 EAN-13처럼 가드바가 있는 타입에서 잘림 현상을 방지합니다. */
+            if (!/ width=/.test(svgStr)) {
+            svgStr = svgStr.replace('<svg', `<svg width="${svgW}" height="${svgH}"`);
+            } else {
+            /* 이미 있어도 정확한 값으로 덮어씀 */
+            svgStr = svgStr
+                .replace(/ width="[^"]*"/, ` width="${svgW}"`)
+                .replace(/ height="[^"]*"/, ` height="${svgH}"`);
+            }
+    
+            /* ── Fix 1-b: 외부 폰트를 시스템 monospace로 교체 ──
+            * SVG → Canvas 변환은 격리 컨텍스트에서 실행되므로
+            * Google Fonts 등 외부 폰트를 사용할 수 없습니다.
+            * 시스템 monospace 폰트로 교체해 레이아웃을 안정화합니다. */
+            svgStr = svgStr
+            .replace(/DM Mono,\s*monospace/gi,  'monospace')
+            .replace(/["']DM Mono["']/gi,        '"monospace"')
+            .replace(/font-family\s*:\s*DM Mono/gi, 'font-family: monospace');
+    
             /* Canvas 크기 설정 (고해상도 배율 적용) */
-            const canvas = DOM.canvas;
+            const canvas  = DOM.canvas;
             canvas.width  = Math.round(svgW * scale);
             canvas.height = Math.round(svgH * scale);
     
             const ctx = canvas.getContext('2d');
     
-            /* 배경색 채우기 (투명 PNG도 배경 필요) */
+            /* ── Fix 3: 이전 변환 픽셀 초기화 ── */
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+            /* 배경색 채우기 */
             ctx.fillStyle = bgForce || STATE.bgColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-            /* SVG → Blob → ObjectURL → Image 렌더링 */
-            const blob  = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-            const url   = URL.createObjectURL(blob);
-            const img   = new Image();
+            /* SVG → Blob → ObjectURL → Image → Canvas */
+            const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+            const url  = URL.createObjectURL(blob);
+            const img  = new Image();
+    
+            /* 명시적 크기 — 일부 브라우저에서 렌더링 안정화 */
+            img.width  = canvas.width;
+            img.height = canvas.height;
     
             img.onload = () => {
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -346,7 +394,7 @@
     
             img.onerror = () => {
             URL.revokeObjectURL(url);
-            reject(new Error('SVG → Canvas 변환 실패'));
+            reject(new Error('SVG → Canvas 변환 실패. 브라우저 보안 정책을 확인하세요.'));
             };
     
             img.src = url;
