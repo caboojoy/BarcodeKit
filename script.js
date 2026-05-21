@@ -24,10 +24,10 @@
         return cm * PX_PER_CM;
     }
 
-    /** 막대 너비(cm) → JsBarcode width(px), 0.5px 단위 */
+    /** 막대 너비(cm) → JsBarcode width(px) */
     function barWidthCmToPx(cm) {
         const px = cmToPx(cm);
-        return Math.min(5, Math.max(1, Math.round(px * 2) / 2));
+        return Math.max(0.5, Math.round(px * 10) / 10);
     }
 
     /** 바코드 높이(cm) → px (40–250) */
@@ -46,9 +46,9 @@
     const STATE = {
         type:      'CODE128',   // 현재 바코드 타입
         value:     '123456789012', // 입력값
-        width:     pxToCm(2),    // 막대 너비 (cm)
-        height:    pxToCm(100),  // 바코드 높이 (cm)
-        margin:    pxToCm(10),   // 여백 (cm)
+        width:     0.05,         // 막대 너비 (cm)
+        height:    2.65,         // 바코드 높이 (cm)
+        margin:    0.26,         // 여백 (cm)
         fgColor:   '#000000',   // 전경색 (바코드 막대)
         bgColor:   '#ffffff',   // 배경색
         showText:  true,        // 텍스트(숫자) 표시 여부
@@ -163,39 +163,100 @@
     }
     
     /**
-        * 숫자 입력 필드 — 범위 클램프 후 STATE 반영 및 바코드 재생성
+        * step 단위로 반올림
+        * @param {number} v
+        * @param {number} step
+        */
+    function roundToStep(v, step) {
+        if (step >= 1) return Math.round(v);
+        const rounded = Math.round(v / step) * step;
+        const stepStr = String(step);
+        const decimals = stepStr.includes('.') ? stepStr.split('.')[1].length : 0;
+        const factor = 10 ** decimals;
+        return Math.round(rounded * factor) / factor;
+    }
+
+    /**
+        * 숫자 입력 — 입력 중 필드 값을 덮어쓰지 않음 (지우고 새로 입력 가능)
         * @param {HTMLInputElement} el
         * @param {{ parse: (v: string) => number, min: number, max: number, step: number, get: () => number, set: (v: number) => void }} opts
         */
     function bindNumberInput(el, opts) {
-        const apply = (commitEmpty) => {
+        const commit = (restoreIfInvalid) => {
         const raw = el.value.trim();
-        if (raw === '') {
-            if (commitEmpty) el.value = String(opts.get());
+        if (raw === '' || raw === '-' || raw === '.') {
+            if (restoreIfInvalid) el.value = String(opts.get());
             return;
         }
         let v = opts.parse(raw);
         if (Number.isNaN(v)) {
-            if (commitEmpty) el.value = String(opts.get());
+            if (restoreIfInvalid) el.value = String(opts.get());
             return;
         }
         v = Math.min(opts.max, Math.max(opts.min, v));
-        if (opts.step < 1) {
-            v = Math.round(v / opts.step) * opts.step;
-            const stepStr = String(opts.step);
-            const decimals = stepStr.includes('.') ? stepStr.split('.')[1].length : 0;
-            const factor = 10 ** decimals;
-            v = Math.round(v * factor) / factor;
-        } else {
-            v = Math.round(v);
-        }
+        v = roundToStep(v, opts.step);
         el.value = String(v);
         if (v === opts.get()) return;
         opts.set(v);
         debouncedGenerate();
         };
-        el.addEventListener('input', () => apply(false));
-        el.addEventListener('change', () => apply(true));
+
+        el.addEventListener('input', () => {
+        const raw = el.value.trim();
+        if (raw === '' || raw === '-' || raw.endsWith('.')) return;
+        const v = opts.parse(raw);
+        if (Number.isNaN(v) || v === opts.get()) return;
+        opts.set(v);
+        debouncedGenerate();
+        });
+        el.addEventListener('change', () => commit(true));
+        el.addEventListener('blur',   () => commit(true));
+    }
+
+    /** EAN/UPC 타입일 때 숫자 키패드 표시 */
+    function syncBarcodeValueInputMode() {
+        const numeric = STATE.type === 'EAN13' || STATE.type === 'UPC';
+        DOM.valueInput.setAttribute('inputmode', numeric ? 'numeric' : 'text');
+    }
+
+    /**
+        * 바코드 값 입력 — 입력 중 오류 표시·값 복원 없음
+        */
+    function onBarcodeValueInput() {
+        const value = DOM.valueInput.value.trim();
+        setError('');
+        DOM.valueInput.classList.remove('error');
+
+        if (!value) {
+        clearPreview();
+        setButtonsEnabled(false);
+        STATE.isValid = false;
+        return;
+        }
+
+        const rule = RULES[STATE.type];
+        if (rule.validate(value)) {
+        debouncedGenerate();
+        } else {
+        clearPreview();
+        setButtonsEnabled(false);
+        STATE.isValid = false;
+        }
+    }
+
+    /** blur 시 유효성 메시지 표시 후 생성 시도 */
+    function onBarcodeValueBlur() {
+        const value = DOM.valueInput.value.trim();
+        if (!value) {
+        setError('');
+        return;
+        }
+        const rule = RULES[STATE.type];
+        if (!rule.validate(value)) {
+        setError(rule.error);
+        return;
+        }
+        generateBarcode();
     }
     
     /**
@@ -894,18 +955,21 @@
             btn.setAttribute('aria-pressed', 'true');
     
             STATE.type = btn.dataset.type;
-            debouncedGenerate();
+            syncBarcodeValueInputMode();
+            onBarcodeValueInput();
         });
         });
     
-        /* ── 텍스트 입력 (디바운스 300ms) ── */
-        DOM.valueInput.addEventListener('input', debouncedGenerate);
+        /* ── 바코드 값 입력 ── */
+        DOM.valueInput.addEventListener('input', onBarcodeValueInput);
+        DOM.valueInput.addEventListener('blur',  onBarcodeValueBlur);
     
         /* ── 입력 지우기 버튼 ── */
         DOM.inputClear.addEventListener('click', () => {
         DOM.valueInput.value = '';
         DOM.valueInput.focus();
-        debouncedGenerate();
+        setError('');
+        onBarcodeValueInput();
         });
     
         /* ── Enter 키 즉시 생성 ── */
@@ -919,8 +983,8 @@
         /* ── 숫자 입력: 크기 & 여백 ── */
         bindNumberInput(DOM.widthInput, {
         parse: parseFloat,
-        min: pxToCm(1),
-        max: pxToCm(5),
+        min: 0.03,
+        max: 10,
         step: 0.01,
         get: () => STATE.width,
         set: v => { STATE.width = v; },
@@ -1005,6 +1069,8 @@
         DOM.widthInput.value  = String(STATE.width);
         DOM.heightInput.value = String(STATE.height);
         DOM.marginInput.value = String(STATE.margin);
+
+        syncBarcodeValueInputMode();
 
         /* 버튼 초기 비활성 (바코드 미생성 상태) */
         setButtonsEnabled(false);
