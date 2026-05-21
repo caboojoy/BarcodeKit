@@ -10,15 +10,45 @@
     const BARCODE_TEXT_FONT_SIZE = 22;
     const BARCODE_TEXT_MARGIN = 8;
 
+    /** CSS 96dpi 기준 cm ↔ px 변환 */
+    const PX_PER_CM = 96 / 2.54;
+    const CM_PER_PX = 2.54 / 96;
+
+    /** @param {number} px */
+    function pxToCm(px) {
+        return Math.round(px * CM_PER_PX * 100) / 100;
+    }
+
+    /** @param {number} cm */
+    function cmToPx(cm) {
+        return cm * PX_PER_CM;
+    }
+
+    /** 막대 너비(cm) → JsBarcode width(px), 0.5px 단위 */
+    function barWidthCmToPx(cm) {
+        const px = cmToPx(cm);
+        return Math.min(5, Math.max(1, Math.round(px * 2) / 2));
+    }
+
+    /** 바코드 높이(cm) → px (40–250) */
+    function heightCmToPx(cm) {
+        return Math.round(Math.min(250, Math.max(40, cmToPx(cm))));
+    }
+
+    /** 여백(cm) → px (0–50) */
+    function marginCmToPx(cm) {
+        return Math.round(Math.min(50, Math.max(0, cmToPx(cm))));
+    }
+
     /* ═══════════════════════════════════════
         1. 전역 상태 (단일 진실 소스)
     ═══════════════════════════════════════ */
     const STATE = {
         type:      'CODE128',   // 현재 바코드 타입
         value:     '123456789012', // 입력값
-        width:     2,           // 막대 너비 (JsBarcode width 옵션)
-        height:    100,         // 바코드 높이 (px)
-        margin:    10,          // 여백 (px)
+        width:     pxToCm(2),    // 막대 너비 (cm)
+        height:    pxToCm(100),  // 바코드 높이 (cm)
+        margin:    pxToCm(10),   // 여백 (cm)
         fgColor:   '#000000',   // 전경색 (바코드 막대)
         bgColor:   '#ffffff',   // 배경색
         showText:  true,        // 텍스트(숫자) 표시 여부
@@ -152,7 +182,10 @@
         v = Math.min(opts.max, Math.max(opts.min, v));
         if (opts.step < 1) {
             v = Math.round(v / opts.step) * opts.step;
-            v = Math.round(v * 10) / 10;
+            const stepStr = String(opts.step);
+            const decimals = stepStr.includes('.') ? stepStr.split('.')[1].length : 0;
+            const factor = 10 ** decimals;
+            v = Math.round(v * factor) / factor;
         } else {
             v = Math.round(v);
         }
@@ -276,9 +309,9 @@
         try {
         JsBarcode(DOM.svg, value, {
             format:       STATE.type,
-            width:        STATE.width,
-            height:       STATE.height,
-            margin:       STATE.margin,
+            width:        barWidthCmToPx(STATE.width),
+            height:       heightCmToPx(STATE.height),
+            margin:       marginCmToPx(STATE.margin),
             lineColor:    STATE.fgColor,
             background:   STATE.bgColor,
             displayValue: STATE.showText,
@@ -708,7 +741,7 @@
         /* 데이터 행 구성 */
         const rows = [
             /* 헤더 */
-            ['바코드 값', '타입', '막대 너비 (px)', '바코드 높이 (px)',
+            ['바코드 값', '타입', '막대 너비 (cm)', '바코드 높이 (cm)',
             '전경색', '배경색', '텍스트 표시', '생성일시'],
             /* 데이터 */
             [
@@ -886,25 +919,25 @@
         /* ── 숫자 입력: 크기 & 여백 ── */
         bindNumberInput(DOM.widthInput, {
         parse: parseFloat,
-        min: 1,
-        max: 5,
-        step: 0.5,
+        min: pxToCm(1),
+        max: pxToCm(5),
+        step: 0.01,
         get: () => STATE.width,
         set: v => { STATE.width = v; },
         });
         bindNumberInput(DOM.heightInput, {
-        parse: v => parseInt(v, 10),
-        min: 40,
-        max: 250,
-        step: 1,
+        parse: parseFloat,
+        min: pxToCm(40),
+        max: pxToCm(250),
+        step: 0.1,
         get: () => STATE.height,
         set: v => { STATE.height = v; },
         });
         bindNumberInput(DOM.marginInput, {
-        parse: v => parseInt(v, 10),
+        parse: parseFloat,
         min: 0,
-        max: 50,
-        step: 1,
+        max: pxToCm(50),
+        step: 0.1,
         get: () => STATE.margin,
         set: v => { STATE.margin = v; },
         });
@@ -967,7 +1000,12 @@
     
         /* 이벤트 연결 */
         bindEvents();
-    
+
+        /* 크기·여백 입력값을 STATE와 동기화 */
+        DOM.widthInput.value  = String(STATE.width);
+        DOM.heightInput.value = String(STATE.height);
+        DOM.marginInput.value = String(STATE.margin);
+
         /* 버튼 초기 비활성 (바코드 미생성 상태) */
         setButtonsEnabled(false);
     
