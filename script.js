@@ -6,6 +6,10 @@
 
     'use strict';
 
+    /** 바코드 하단 숫자(텍스트) 표시 크기 */
+    const BARCODE_TEXT_FONT_SIZE = 22;
+    const BARCODE_TEXT_MARGIN = 8;
+
     /* ═══════════════════════════════════════
         1. 전역 상태 (단일 진실 소스)
     ═══════════════════════════════════════ */
@@ -43,13 +47,10 @@
         inputHint:     $('inputHint'),
         inputError:    $('inputError'),
     
-        /* 슬라이더 */
-        widthSlider:   $('barcodeWidth'),
-        widthVal:      $('barcodeWidthVal'),
-        heightSlider:  $('barcodeHeight'),
-        heightVal:     $('barcodeHeightVal'),
-        marginSlider:  $('barcodeMargin'),
-        marginVal:     $('barcodeMarginVal'),
+        /* 크기 & 여백 숫자 입력 */
+        widthInput:    $('barcodeWidth'),
+        heightInput:   $('barcodeHeight'),
+        marginInput:   $('barcodeMargin'),
     
         /* 색상 */
         fgColor:       $('fgColor'),
@@ -129,6 +130,39 @@
         clearTimeout(timer);
         timer = setTimeout(() => fn(...args), delay);
         };
+    }
+    
+    /**
+        * 숫자 입력 필드 — 범위 클램프 후 STATE 반영 및 바코드 재생성
+        * @param {HTMLInputElement} el
+        * @param {{ parse: (v: string) => number, min: number, max: number, step: number, get: () => number, set: (v: number) => void }} opts
+        */
+    function bindNumberInput(el, opts) {
+        const apply = (commitEmpty) => {
+        const raw = el.value.trim();
+        if (raw === '') {
+            if (commitEmpty) el.value = String(opts.get());
+            return;
+        }
+        let v = opts.parse(raw);
+        if (Number.isNaN(v)) {
+            if (commitEmpty) el.value = String(opts.get());
+            return;
+        }
+        v = Math.min(opts.max, Math.max(opts.min, v));
+        if (opts.step < 1) {
+            v = Math.round(v / opts.step) * opts.step;
+            v = Math.round(v * 10) / 10;
+        } else {
+            v = Math.round(v);
+        }
+        el.value = String(v);
+        if (v === opts.get()) return;
+        opts.set(v);
+        debouncedGenerate();
+        };
+        el.addEventListener('input', () => apply(false));
+        el.addEventListener('change', () => apply(true));
     }
     
     /**
@@ -249,8 +283,8 @@
             background:   STATE.bgColor,
             displayValue: STATE.showText,
             font:         'DM Mono, monospace',
-            fontSize:     13,
-            textMargin:   6,
+            fontSize:     BARCODE_TEXT_FONT_SIZE,
+            textMargin:   BARCODE_TEXT_MARGIN,
             /* valid 콜백: 결과를 flag로 저장 (throw 금지) */
             valid: isValid => { barcodeValid = isValid; },
         });
@@ -581,7 +615,7 @@
             const fontSize = parseFloat(
                 textEl.getAttribute('font-size') ||
                 textEl.style?.fontSize ||
-                '13'
+                String(BARCODE_TEXT_FONT_SIZE)
             );
     
             /*
@@ -849,28 +883,30 @@
         }
         });
     
-        /* ── 슬라이더: 막대 너비 ── */
-        DOM.widthSlider.addEventListener('input', () => {
-        STATE.width = parseFloat(DOM.widthSlider.value);
-        DOM.widthVal.textContent = STATE.width + 'px';
-        DOM.widthSlider.setAttribute('aria-valuenow', STATE.width);
-        debouncedGenerate();
+        /* ── 숫자 입력: 크기 & 여백 ── */
+        bindNumberInput(DOM.widthInput, {
+        parse: parseFloat,
+        min: 1,
+        max: 5,
+        step: 0.5,
+        get: () => STATE.width,
+        set: v => { STATE.width = v; },
         });
-    
-        /* ── 슬라이더: 바코드 높이 ── */
-        DOM.heightSlider.addEventListener('input', () => {
-        STATE.height = parseInt(DOM.heightSlider.value);
-        DOM.heightVal.textContent = STATE.height + 'px';
-        DOM.heightSlider.setAttribute('aria-valuenow', STATE.height);
-        debouncedGenerate();
+        bindNumberInput(DOM.heightInput, {
+        parse: v => parseInt(v, 10),
+        min: 40,
+        max: 250,
+        step: 1,
+        get: () => STATE.height,
+        set: v => { STATE.height = v; },
         });
-    
-        /* ── 슬라이더: 여백 ── */
-        DOM.marginSlider.addEventListener('input', () => {
-        STATE.margin = parseInt(DOM.marginSlider.value);
-        DOM.marginVal.textContent = STATE.margin + 'px';
-        DOM.marginSlider.setAttribute('aria-valuenow', STATE.margin);
-        debouncedGenerate();
+        bindNumberInput(DOM.marginInput, {
+        parse: v => parseInt(v, 10),
+        min: 0,
+        max: 50,
+        step: 1,
+        get: () => STATE.margin,
+        set: v => { STATE.margin = v; },
         });
     
         /* ── 색상: 전경 ── */

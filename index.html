@@ -166,34 +166,34 @@
                 <span class="card__num">03</span> 크기 &amp; 여백
             </h2>
 
-            <div class="slider-item">
-                <div class="slider-head">
-                <label class="slider-label" for="barcodeWidth">막대 너비</label>
-                <output class="slider-val" id="barcodeWidthVal" for="barcodeWidth">2px</output>
-                </div>
-                <input class="slider" type="range" id="barcodeWidth"
+            <div class="num-item">
+                <label class="num-label" for="barcodeWidth">막대 너비</label>
+                <div class="num-wrap">
+                <input class="num-field" type="number" id="barcodeWidth"
                     min="1" max="5" step="0.5" value="2"
-                    aria-label="막대 너비 조절" aria-valuemin="1" aria-valuemax="5" aria-valuenow="2" />
+                    aria-label="막대 너비 (1–5)" />
+                <span class="num-unit">px</span>
+                </div>
             </div>
 
-            <div class="slider-item">
-                <div class="slider-head">
-                <label class="slider-label" for="barcodeHeight">바코드 높이</label>
-                <output class="slider-val" id="barcodeHeightVal" for="barcodeHeight">100px</output>
+            <div class="num-item">
+                <label class="num-label" for="barcodeHeight">바코드 높이</label>
+                <div class="num-wrap">
+                <input class="num-field" type="number" id="barcodeHeight"
+                    min="40" max="250" step="1" value="100"
+                    aria-label="바코드 높이 (40–250)" />
+                <span class="num-unit">px</span>
                 </div>
-                <input class="slider" type="range" id="barcodeHeight"
-                    min="40" max="250" step="10" value="100"
-                    aria-label="바코드 높이 조절" aria-valuemin="40" aria-valuemax="250" aria-valuenow="100" />
             </div>
 
-            <div class="slider-item">
-                <div class="slider-head">
-                <label class="slider-label" for="barcodeMargin">여백</label>
-                <output class="slider-val" id="barcodeMarginVal" for="barcodeMargin">10px</output>
+            <div class="num-item">
+                <label class="num-label" for="barcodeMargin">여백</label>
+                <div class="num-wrap">
+                <input class="num-field" type="number" id="barcodeMargin"
+                    min="0" max="50" step="1" value="10"
+                    aria-label="여백 (0–50)" />
+                <span class="num-unit">px</span>
                 </div>
-                <input class="slider" type="range" id="barcodeMargin"
-                    min="0" max="50" step="5" value="10"
-                    aria-label="여백 조절" aria-valuemin="0" aria-valuemax="50" aria-valuenow="10" />
             </div>
             </div>
 

@@ -497,78 +497,61 @@
     .input-error::before { content: '⚠'; }
     
     /* ═══════════════════════════════════════
-        13. 슬라이더
+        13. 숫자 입력 (크기 & 여백)
     ═══════════════════════════════════════ */
-    .slider-item {
-        margin-bottom: 16px;
-    }
-    
-    .slider-item:last-child { margin-bottom: 0; }
-    
-    .slider-head {
+    .num-item {
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        margin-bottom: 8px;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
     }
     
-    .slider-label {
-        font-size: 11.5px;
+    .num-item:last-child { margin-bottom: 0; }
+    
+    .num-label {
+        font-size: 14px;
         color: var(--txt-2);
+        flex-shrink: 0;
     }
     
-    .slider-val {
-        font-size: 11px;
-        font-weight: 500;
-        color: var(--accent);
+    .num-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .num-field {
+        width: 96px;
         background: var(--bg-raised);
         border: 1px solid var(--border);
-        padding: 2px 9px;
-        border-radius: 4px;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 18px;
+        font-weight: 500;
         font-family: var(--font-mono);
-        min-width: 40px;
-        text-align: center;
-    }
-    
-    /* WebKit 슬라이더 */
-    .slider {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 100%;
-        height: 3px;
-        border-radius: 2px;
-        background: var(--border);
+        color: var(--txt-1);
+        text-align: right;
         outline: none;
-        cursor: pointer;
+        -moz-appearance: textfield;
     }
     
-    .slider::-webkit-slider-thumb {
+    .num-field::-webkit-outer-spin-button,
+    .num-field::-webkit-inner-spin-button {
         -webkit-appearance: none;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: var(--accent);
-        border: 2px solid var(--bg-surface);
-        box-shadow: 0 0 6px rgba(240,165,0,0.5);
-        cursor: grab;
-        transition: transform 0.15s, box-shadow 0.15s;
+        margin: 0;
     }
     
-    .slider::-webkit-slider-thumb:hover {
-        transform: scale(1.25);
-        box-shadow: 0 0 12px rgba(240,165,0,0.7);
+    .num-field:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-dim);
     }
     
-    .slider::-webkit-slider-thumb:active { cursor: grabbing; }
-    
-    /* Firefox */
-    .slider::-moz-range-thumb {
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        background: var(--accent);
-        border: 2px solid var(--bg-surface);
-        cursor: grab;
+    .num-unit {
+        font-size: 14px;
+        color: var(--txt-3);
+        font-family: var(--font-mono);
+        min-width: 24px;
     }
     
     /* ═══════════════════════════════════════
