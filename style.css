@@ -1,9 +1,19 @@
     /* ╔══════════════════════════════════════════════════════════════╗
     ║  style.css — BarcodeKit                                      ║
     ║  디자인: 정밀한 산업 도구 미학 (Industrial Precision)         ║
-    ║  폰트:  Syne (헤딩) + DM Mono (데이터/코드)                  ║
+    ║  폰트:  Syne (헤딩) + DM Mono (UI) + OCR-B (바코드 HRI)      ║
     ║  테마:  다크/라이트 토글 + OS 자동 감지                       ║
     ╚══════════════════════════════════════════════════════════════╝ */
+
+    /* 바코드 하단 숫자 전용 — UI(--font-mono)와 분리 */
+    @font-face {
+        font-family: 'OCR-B';
+        src: url('fonts/OCR-B.woff2') format('woff2'),
+             url('fonts/OCR-B.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: block;
+    }
 
     /* ═══════════════════════════════════════
     1. CSS 변수 — 다크 테마 (기본)

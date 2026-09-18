@@ -7,8 +7,16 @@
     'use strict';
 
     /** 바코드 하단 숫자(텍스트) 표시 크기 */
-    const BARCODE_TEXT_FONT_SIZE = 22;
+    const BARCODE_TEXT_FONT_SIZE = 16;
+    /** EAN-13/UPC 인셋 HRI는 더 작게 */
+    const EAN_UPC_FONT_SIZE = 14;
+    /** CODE128/CODE39: 숫자와 막대 사이 간격. EAN/UPC는 숫자 위 인식 여백. */
     const BARCODE_TEXT_MARGIN = 8;
+    const EAN_UPC_TEXT_MARGIN = 4;
+    /** ISO 1073-2 OCR-B (로컬 self-host). UI 서체와 분리. */
+    const BARCODE_TEXT_FONT = 'OCR-B, monospace';
+    const OCR_B_FONT_URL = 'fonts/OCR-B.woff2';
+    const OCR_B_FONT_FORMAT = 'woff2';
 
     /** CSS 96dpi 기준 cm ↔ px 변환 */
     const PX_PER_CM = 96 / 2.54;
@@ -317,6 +325,210 @@
         hour: '2-digit', minute: '2-digit', second: '2-digit',
         });
     }
+
+    /* ── OCR-B 로드 / SVG 임베드 ── */
+    let _ocrBReadyPromise;
+    let _ocrBDataUriPromise;
+    let _barcodeGenSeq = 0;
+
+    /**
+        * JsBarcode measureText 전에 OCR-B가 로드됐는지 보장합니다.
+        * 미로드 시 EAN-13 숫자 위치가 어긋날 수 있습니다.
+        */
+    function ensureOcrBReady() {
+        if (!_ocrBReadyPromise) {
+            _ocrBReadyPromise = (async () => {
+                try {
+                    if (document.fonts && document.fonts.load) {
+                        await document.fonts.load(`${BARCODE_TEXT_FONT_SIZE}px "OCR-B"`);
+                        await document.fonts.load(`${EAN_UPC_FONT_SIZE}px "OCR-B"`);
+                    } else if (document.fonts && document.fonts.ready) {
+                        await document.fonts.ready;
+                    }
+                } catch (err) {
+                    console.warn('[BarcodeKit] OCR-B 로드 실패, monospace로 폴백합니다.', err);
+                }
+            })();
+        }
+        return _ocrBReadyPromise;
+    }
+
+    /** OCR-B woff2를 data URI로 캐시 (SVG 격리 컨텍스트·파일 임베드용) */
+    function getOcrBDataUri() {
+        if (!_ocrBDataUriPromise) {
+            _ocrBDataUriPromise = fetch(OCR_B_FONT_URL)
+                .then(res => {
+                    if (!res.ok) throw new Error(`OCR-B 폰트 HTTP ${res.status}`);
+                    return res.blob();
+                })
+                .then(blob => new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(String(reader.result || ''));
+                    reader.onerror = () => reject(reader.error || new Error('OCR-B 읽기 실패'));
+                    reader.readAsDataURL(blob);
+                }));
+        }
+        return _ocrBDataUriPromise;
+    }
+
+    /**
+        * 독립 SVG(다운로드·Canvas)에 OCR-B @font-face를 넣습니다.
+        * img/blob 컨텍스트는 외부 폰트를 불러오지 못합니다.
+        * @param {string} svgStr
+        * @param {string} dataUri
+        */
+    function embedOcrBInSvg(svgStr, dataUri) {
+        if (!svgStr || !dataUri) return svgStr;
+        if (svgStr.includes('@font-face') && svgStr.includes('OCR-B')) return svgStr;
+
+        const css =
+            `@font-face{font-family:'OCR-B';font-weight:normal;font-style:normal;` +
+            `src:url(${dataUri}) format('${OCR_B_FONT_FORMAT}');}`;
+        const block = `<defs><style type="text/css"><![CDATA[${css}]]></style></defs>`;
+        return svgStr.replace(/<svg([^>]*)>/, `<svg$1>${block}`);
+    }
+
+    /** @param {string} svgStr */
+    async function serializeSvgWithOcrB(svgStr) {
+        try {
+            return embedOcrBInSvg(svgStr, await getOcrBDataUri());
+        } catch (err) {
+            console.warn('[BarcodeKit] OCR-B 임베드 실패, 시스템 폰트로 폴백합니다.', err);
+            return svgStr;
+        }
+    }
+
+    /** @param {string} type */
+    function isEanFamily(type) {
+        return type === 'EAN13' || type === 'UPC';
+    }
+
+    /** @returns {number} */
+    function barcodeTextFontSize() {
+        return isEanFamily(STATE.type) ? EAN_UPC_FONT_SIZE : BARCODE_TEXT_FONT_SIZE;
+    }
+
+    /**
+        * SVG 요소 bbox를 루트 SVG 좌표로 변환합니다.
+        * @param {SVGGraphicsElement} el
+        * @param {SVGSVGElement} svg
+        */
+    function elementBoxInSvg(el, svg) {
+        const bbox = el.getBBox();
+        const ctm = el.getCTM();
+        if (!ctm) return null;
+        const a = svg.createSVGPoint();
+        const b = svg.createSVGPoint();
+        a.x = bbox.x;
+        a.y = bbox.y;
+        b.x = bbox.x + bbox.width;
+        b.y = bbox.y + bbox.height;
+        const p1 = a.matrixTransform(ctm);
+        const p2 = b.matrixTransform(ctm);
+        const top = Math.min(p1.y, p2.y);
+        const bottom = Math.max(p1.y, p2.y);
+        return { top, bottom, height: bottom - top };
+    }
+
+    /**
+        * OCR-B 숫자 글리프의 실제 하단(베이스라인 + descent)을 SVG y로 반환합니다.
+        * getBBox는 폰트 descent 박스까지 포함해 숫자보다 아래로 내려갑니다.
+        * @param {SVGTextElement} textEl
+        * @param {SVGSVGElement} svg
+        */
+    function glyphBottomInSvg(textEl, svg) {
+        const ctm = textEl.getCTM();
+        if (!ctm) return null;
+        const content = (textEl.textContent || '').trim();
+        const fontSize = parseFloat(
+            textEl.getAttribute('font-size') ||
+            textEl.style?.fontSize ||
+            String(barcodeTextFontSize())
+        );
+        let descent = fontSize * 0.12;
+        try {
+            const ctx = document.createElement('canvas').getContext('2d');
+            if (ctx) {
+                ctx.font = `${fontSize}px ${BARCODE_TEXT_FONT}`;
+                const m = ctx.measureText(content || '0');
+                if (m && typeof m.actualBoundingBoxDescent === 'number') {
+                    descent = m.actualBoundingBoxDescent;
+                }
+            }
+        } catch (_) { /* canvas 미지원 시 추정값 사용 */ }
+
+        const pt = svg.createSVGPoint();
+        pt.x = parseFloat(textEl.getAttribute('x') || '0');
+        pt.y = parseFloat(textEl.getAttribute('y') || '0') + descent;
+        return pt.matrixTransform(ctm).y;
+    }
+
+    /**
+        * EAN-13/UPC: 가드바와 숫자 글리프 하단을 같은 수평선에 맞추고
+        * SVG 높이를 그 선 + 하단 여백까지로 자릅니다.
+        * @param {SVGSVGElement} svg
+        */
+    function nestEanGuardBars(svg) {
+        if (!isEanFamily(STATE.type) || !STATE.showText) return;
+
+        const texts = [...svg.querySelectorAll('text')]
+            .filter(t => (t.textContent || '').trim());
+        if (!texts.length) return;
+
+        let flushY = 0;
+        texts.forEach(t => {
+            try {
+                const y = glyphBottomInSvg(t, svg);
+                if (typeof y === 'number') flushY = Math.max(flushY, y);
+            } catch (_) { /* getCTM 실패 시 생략 */ }
+        });
+        if (!flushY) return;
+
+        const svgW = parseFloat(svg.getAttribute('width')) || svg.viewBox?.baseVal?.width || 0;
+        const svgH = parseFloat(svg.getAttribute('height')) || svg.viewBox?.baseVal?.height || 0;
+
+        const bars = [];
+        svg.querySelectorAll('rect').forEach(rect => {
+            const w = parseFloat(rect.getAttribute('width') || '0');
+            const h = parseFloat(rect.getAttribute('height') || '0');
+            if (w <= 0 || h <= 0) return;
+            if (svgW && w >= svgW * 0.9 && svgH && h >= svgH * 0.9) return;
+            bars.push({ rect, h });
+        });
+        if (!bars.length) return;
+
+        const dataH = Math.min(...bars.map(b => b.h));
+        let guardBottom = 0;
+        bars.forEach(({ rect, h }) => {
+            if (h <= dataH + 0.5) return;
+            let extra = 0;
+            try {
+                const box = elementBoxInSvg(rect, svg);
+                if (!box || box.height <= 0) return;
+                extra = (flushY - box.bottom) * (h / box.height);
+                guardBottom = Math.max(guardBottom, flushY);
+            } catch (_) {
+                extra = flushY - h;
+            }
+            if (Math.abs(extra) <= 0.25) return;
+            rect.setAttribute('height', String(h + extra));
+        });
+
+        const marginBottom = marginCmToPx(STATE.margin);
+        const newH = Math.max(flushY, guardBottom) + marginBottom;
+        if (!(newH > 0) || Math.abs(svgH - newH) < 0.5) return;
+
+        svg.setAttribute('height', `${newH}px`);
+        const vbW = svg.viewBox?.baseVal?.width || svgW;
+        svg.setAttribute('viewBox', `0 0 ${vbW} ${newH}`);
+        svg.querySelectorAll('rect').forEach(rect => {
+            const w = parseFloat(rect.getAttribute('width') || '0');
+            const h = parseFloat(rect.getAttribute('height') || '0');
+            if (svgW && w >= svgW * 0.9 && svgH && h >= svgH * 0.9) {
+                rect.setAttribute('height', String(newH));
+            }
+        });
+    }
     
     /* ═══════════════════════════════════════
         5. 바코드 생성 (핵심)
@@ -326,7 +538,8 @@
         * JsBarcode를 사용해 SVG에 바코드를 렌더링합니다.
         * 입력값 검증 → 렌더링 → UI 상태 갱신 순으로 진행.
         */
-    function generateBarcode() {
+    async function generateBarcode() {
+        const genId = ++_barcodeGenSeq;
         const raw   = DOM.valueInput.value;
         const value = raw.trim();
         const rule  = RULES[STATE.type];
@@ -368,6 +581,9 @@
         let barcodeValid = true;
     
         try {
+        await ensureOcrBReady();
+        if (genId !== _barcodeGenSeq) return;
+
         JsBarcode(DOM.svg, value, {
             format:       STATE.type,
             width:        barWidthCmToPx(STATE.width),
@@ -376,9 +592,9 @@
             lineColor:    STATE.fgColor,
             background:   STATE.bgColor,
             displayValue: STATE.showText,
-            font:         'DM Mono, monospace',
-            fontSize:     BARCODE_TEXT_FONT_SIZE,
-            textMargin:   BARCODE_TEXT_MARGIN,
+            font:         BARCODE_TEXT_FONT,
+            fontSize:     barcodeTextFontSize(),
+            textMargin:   isEanFamily(STATE.type) ? EAN_UPC_TEXT_MARGIN : BARCODE_TEXT_MARGIN,
             /* valid 콜백: 결과를 flag로 저장 (throw 금지) */
             valid: isValid => { barcodeValid = isValid; },
         });
@@ -387,6 +603,8 @@
         if (!barcodeValid) {
             throw new Error('유효하지 않은 바코드 값입니다. 입력값을 확인해주세요.');
         }
+
+        nestEanGuardBars(DOM.svg);
     
         /* 성공 */
         DOM.placeholder.style.display = 'none';
@@ -430,10 +648,10 @@
         *
         * 원인 1. 외부 폰트 미로드
         *   SVG를 Canvas로 변환할 때 격리된 렌더링 컨텍스트에서는
-        *   Google Fonts(DM Mono) 등 외부 폰트가 로드되지 않습니다.
+        *   페이지 @font-face(OCR-B)를 불러오지 못합니다.
         *   폰트 메트릭이 달라지면 텍스트 위치가 틀어지고,
         *   EAN-13의 가드바(guard bar)가 캔버스 밖으로 밀려납니다.
-        *   → document.fonts.ready 대기 후 시스템 monospace로 교체
+        *   → OCR-B를 data URI @font-face로 SVG에 임베드
         *
         * 원인 2. SVG width/height 속성 누락
         *   속성이 없으면 브라우저가 임의 크기로 렌더링해 이미지가 잘립니다.
@@ -445,10 +663,10 @@
         */
     async function svgToCanvas(scale = 2, bgForce = null) {
     
-        /* ── Fix 1: 모든 폰트 로드 완료까지 대기 ── */
-        await document.fonts.ready;
+        await ensureOcrBReady();
     
         return new Promise((resolve, reject) => {
+        (async () => {
         try {
             const svgEl = DOM.svg;
     
@@ -482,14 +700,10 @@
                 .replace(/ height="[^"]*"/, ` height="${svgH}"`);
             }
     
-            /* ── Fix 1-b: 외부 폰트를 시스템 monospace로 교체 ──
-            * SVG → Canvas 변환은 격리 컨텍스트에서 실행되므로
-            * Google Fonts 등 외부 폰트를 사용할 수 없습니다.
-            * 시스템 monospace 폰트로 교체해 레이아웃을 안정화합니다. */
-            svgStr = svgStr
-            .replace(/DM Mono,\s*monospace/gi,  'monospace')
-            .replace(/["']DM Mono["']/gi,        '"monospace"')
-            .replace(/font-family\s*:\s*DM Mono/gi, 'font-family: monospace');
+            /* ── Fix 1-b: OCR-B를 SVG에 임베드 ──
+            * Blob/img 컨텍스트는 외부 폰트를 요청하지 못하므로
+            * @font-face data URI를 문서 안에 넣습니다. */
+            svgStr = await serializeSvgWithOcrB(svgStr);
     
             /* Canvas 크기 설정 (고해상도 배율 적용) */
             const canvas  = DOM.canvas;
@@ -530,6 +744,7 @@
         } catch (err) {
             reject(err);
         }
+        })();
         });
     }
     
@@ -571,7 +786,7 @@
     }
     
     /* ── 7-3. SVG 다운로드 ── */
-    function downloadSVG() {
+    async function downloadSVG() {
         if (!STATE.isValid) return;
         try {
         const serializer = new XMLSerializer();
@@ -580,6 +795,8 @@
         if (!svgStr.includes('xmlns=')) {
             svgStr = svgStr.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
         }
+
+        svgStr = await serializeSvgWithOcrB(svgStr);
     
         /* XML 선언 추가 (일부 뷰어 호환성) */
         const full = '<?xml version="1.0" encoding="UTF-8"?>\n' + svgStr;
@@ -607,7 +824,8 @@
         *   %!PS-Adobe-3.0 EPSF-3.0  ← EPS 헤더
         *   %%BoundingBox             ← Illustrator가 크기 인식에 사용
         *   setrgbcolor + rectfill    ← 배경 + 각 막대 렌더링
-        *   텍스트 (선택)             ← Helvetica 폰트 사용
+        *   텍스트 (선택)             ← Helvetica (PostScript 표준 서체)
+        *                             OCR-B는 PS 기본 서체가 아니라 EPS에는 포함하지 않음
         *   %%EOF
         * ──────────────────────────────────────────────────────────────── */
     function downloadEPS() {
@@ -643,6 +861,7 @@
             '%%Creator: BarcodeKit',
             `%%CreationDate: ${formatNow()}`,
             '%%DocumentData: Clean7Bit',
+            '% HRI text uses Helvetica; OCR-B is not a standard PostScript font',
             '%%EndComments',
             '',
             '%%BeginProlog',
@@ -731,7 +950,7 @@
     
             lines.push(
                 '',
-                '% ── 바코드 텍스트 ──',
+                '% ── 바코드 텍스트 (Helvetica: OCR-B는 PostScript 표준 서체가 아님) ──',
                 `${fg.r.toFixed(4)} ${fg.g.toFixed(4)} ${fg.b.toFixed(4)} setrgbcolor`,
                 `/Helvetica findfont ${fontSize.toFixed(2)} scalefont setfont`,
                 `${tx.toFixed(3)} ${epsY.toFixed(3)} moveto`,
@@ -837,9 +1056,11 @@
     }
     
     /* ── 7-7. 인쇄 ── */
-    function printBarcode() {
+    async function printBarcode() {
         if (!STATE.isValid) return;
         try {
+        await ensureOcrBReady();
+
         /* 인쇄 전용 영역에 SVG 복사 */
         const serializer = new XMLSerializer();
         DOM.printArea.innerHTML = serializer.serializeToString(DOM.svg);

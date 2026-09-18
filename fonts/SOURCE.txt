@@ -1,0 +1,13 @@
+OCR-B font (self-hosted)
+
+Copyright (c) 2019, Raisty
+Reserved Font Name: OCR-B
+License: SIL Open Font License 1.1 (see LICENSE.md)
+
+Source: https://github.com/jaycee723/ocr-b
+Commit: fedeba81519770109925b5bec70e940be5948d8f
+Original file: dist/OCR-B.ttf
+SHA-256: 367d876cca948ecd4900851f6e85687cbb6e71de9d0d2f36348edec5655526af
+
+OCR-B.woff2 is a lossless web-format conversion of the original TTF
+for smaller delivery. The font remains under the SIL OFL 1.1.
