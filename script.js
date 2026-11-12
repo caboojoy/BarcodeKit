@@ -53,7 +53,7 @@
     ═══════════════════════════════════════ */
     const STATE = {
         type:      'CODE128',   // 현재 바코드 타입
-        value:     '123456789012', // 입력값
+        value:     '880911230001', // 입력값 (네 가지 타입 모두에서 유효한 12자리)
         width:     0.05,         // 막대 너비 (cm)
         height:    2.65,         // 바코드 높이 (cm)
         margin:    0.26,         // 여백 (cm)
@@ -130,17 +130,17 @@
         hint: 'CODE128 — 모든 ASCII 문자 허용 (제한 없음)',
         /** @param {string} v */
         validate: v => v.length > 0,
-        error: '값을 입력해주세요.',
+        error: '값을 입력해 주세요',
         },
         EAN13: {
         hint: 'EAN-13 — 숫자 12~13자리 (예: 880123456789)',
         validate: v => /^\d{12,13}$/.test(v),
-        error: '숫자 12~13자리를 입력해주세요. (예: 880123456789)',
+        error: '숫자 12~13자리를 입력해 주세요 (예: 880123456789)',
         },
         UPC: {
         hint: 'UPC-A — 숫자 11~12자리 (예: 01234567890)',
         validate: v => /^\d{11,12}$/.test(v),
-        error: '숫자 11~12자리를 입력해주세요. (예: 01234567890)',
+        error: '숫자 11~12자리를 입력해 주세요 (예: 01234567890)',
         },
         CODE39: {
         hint: 'CODE39 — 대문자 영문·숫자·특수문자(- . $ / + %) 허용',
@@ -149,7 +149,7 @@
             * `\%`는 기술적으로 동작하나 명세상 올바르지 않으므로 `%`로 수정합니다.
             */
         validate: v => v.length > 0 && /^[A-Z0-9\-\.\$\/\+% ]+$/.test(v),
-        error: '대문자·숫자·특수문자(- . $ / + %)만 허용됩니다. 소문자는 불가.',
+        error: '대문자·숫자·특수문자(- . $ / + %)만 쓸 수 있습니다. 소문자는 쓸 수 없습니다.',
         },
     };
     
@@ -759,7 +759,7 @@
         const canvas  = await svgToCanvas(2);
         const dataUrl = canvas.toDataURL('image/png');
         triggerDownload(dataUrl, `barcode_${STATE.value}.png`);
-        showToast('✓ PNG 다운로드 완료 (2x 고해상도)', 'success');
+        showToast('PNG 다운로드 완료 (2x 고해상도)', 'success');
         } catch (err) {
         console.error('[BarcodeKit] PNG 오류:', err);
         showToast('PNG 생성 실패: ' + err.message, 'error');
@@ -778,7 +778,7 @@
         const canvas  = await svgToCanvas(2, '#ffffff');
         const dataUrl = canvas.toDataURL('image/jpeg', 0.95); // 품질 95%
         triggerDownload(dataUrl, `barcode_${STATE.value}.jpg`);
-        showToast('✓ JPG 다운로드 완료', 'success');
+        showToast('JPG 다운로드 완료', 'success');
         } catch (err) {
         console.error('[BarcodeKit] JPG 오류:', err);
         showToast('JPG 생성 실패: ' + err.message, 'error');
@@ -802,7 +802,7 @@
         const full = '<?xml version="1.0" encoding="UTF-8"?>\n' + svgStr;
     
         triggerDownload(full, `barcode_${STATE.value}.svg`, 'image/svg+xml;charset=utf-8');
-        showToast('✓ SVG 다운로드 완료 (벡터)', 'success');
+        showToast('SVG 다운로드 완료 (벡터)', 'success');
         } catch (err) {
         console.error('[BarcodeKit] SVG 오류:', err);
         showToast('SVG 생성 실패: ' + err.message, 'error');
@@ -964,7 +964,7 @@
     
         const epsContent = lines.join('\n');
         triggerDownload(epsContent, `barcode_${STATE.value}.eps`, 'application/postscript');
-        showToast('✓ EPS 다운로드 완료 (Adobe Illustrator 호환)', 'success');
+        showToast('EPS 다운로드 완료 (Adobe Illustrator 호환)', 'success');
     
         } catch (err) {
         console.error('[BarcodeKit] EPS 오류:', err);
@@ -976,7 +976,7 @@
     async function downloadPDF() {
         if (!STATE.isValid) return;
         if (typeof window.jspdf === 'undefined') {
-        showToast('jsPDF 라이브러리 로딩 중... 잠시 후 다시 시도해주세요.', 'error');
+        showToast('jsPDF를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.', 'error');
         return;
         }
         try {
@@ -1001,7 +1001,7 @@
     
         pdf.addImage(imgData, 'PNG', margin, margin, ptW, ptH);
         pdf.save(`barcode_${STATE.value}.pdf`);
-        showToast('✓ PDF 다운로드 완료', 'success');
+        showToast('PDF 다운로드 완료', 'success');
         } catch (err) {
         console.error('[BarcodeKit] PDF 오류:', err);
         showToast('PDF 생성 실패: ' + err.message, 'error');
@@ -1012,7 +1012,7 @@
     function downloadExcel() {
         if (!STATE.isValid) return;
         if (typeof XLSX === 'undefined') {
-        showToast('SheetJS 라이브러리 로딩 중... 잠시 후 다시 시도해주세요.', 'error');
+        showToast('SheetJS를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.', 'error');
         return;
         }
         try {
@@ -1048,7 +1048,7 @@
     
         XLSX.utils.book_append_sheet(wb, ws, '바코드 데이터');
         XLSX.writeFile(wb, `barcode_${STATE.value}.xlsx`);
-        showToast('✓ Excel 다운로드 완료 (.xlsx)', 'success');
+        showToast('Excel 다운로드 완료 (.xlsx)', 'success');
         } catch (err) {
         console.error('[BarcodeKit] Excel 오류:', err);
         showToast('Excel 생성 실패: ' + err.message, 'error');
@@ -1082,7 +1082,7 @@
         } catch (err) {
         console.error('[BarcodeKit] 인쇄 오류:', err);
         DOM.printArea.innerHTML = ''; // 오류 시 즉시 초기화
-        showToast('인쇄 중 오류가 발생했습니다.', 'error');
+        showToast('인쇄 중 오류가 발생했습니다', 'error');
         }
     }
     
@@ -1155,7 +1155,7 @@
     function applyTheme(dark, save = true) {
         STATE.isDark = dark;
         document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-        DOM.themeIcon.textContent = dark ? '☀️' : '🌙';
+        /* 해/달 아이콘은 style.css가 data-theme에 따라 바꿔 보여 준다 */
         if (save) localStorage.setItem('barcodekit-theme', dark ? 'dark' : 'light');
     }
     
@@ -1296,7 +1296,7 @@
         /* 버튼 초기 비활성 (바코드 미생성 상태) */
         setButtonsEnabled(false);
     
-        /* 기본값(123456789012)으로 첫 바코드 생성 */
+        /* 기본값(880911230001)으로 첫 바코드 생성 */
         generateBarcode();
     }
     

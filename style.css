@@ -1,11 +1,12 @@
     /* ╔══════════════════════════════════════════════════════════════╗
     ║  style.css — BarcodeKit                                      ║
-    ║  디자인: 정밀한 산업 도구 미학 (Industrial Precision)         ║
-    ║  폰트:  Syne (헤딩) + DM Mono (UI) + OCR-B (바코드 HRI)      ║
-    ║  테마:  다크/라이트 토글 + OS 자동 감지                       ║
+    ║  방향: 라벨 인쇄 작업대. 회색 작업면, 흰 라벨지, 검은 잉크    ║
+    ║  글꼴: Pretendard (UI) + OCR-B (수치 · 바코드 HRI)            ║
+    ║  테마: 다크/라이트 토글 + OS 자동 감지                        ║
+    ║  간격: 4px 격자 · 포인트 색은 선택·토글·포커스에만            ║
     ╚══════════════════════════════════════════════════════════════╝ */
 
-    /* 바코드 하단 숫자 전용 — UI(--font-mono)와 분리 */
+    /* 바코드 하단 숫자와 화면의 수치에 함께 쓰는 글꼴 */
     @font-face {
         font-family: 'OCR-B';
         src: url('fonts/OCR-B.woff2') format('woff2'),
@@ -19,93 +20,100 @@
     1. CSS 변수 — 다크 테마 (기본)
     ═══════════════════════════════════════ */
     :root {
-        /* 배경 계층 */
-        --bg-base:    #07101A;   /* 최하위 배경 */
-        --bg-surface: #0D1B2A;   /* 카드 배경 */
-        --bg-raised:  #132234;   /* 인풋/슬라이더 배경 */
-        --bg-hover:   #1A2E44;   /* 호버 */
-    
-        /* 테두리 */
-        --border:     #1C3048;
-        --border-2:   #243E58;
-    
-        /* 텍스트 */
-        --txt:        #E8F4FF;
-        --txt-2:      #5C8AAE;
-        --txt-3:      #3A607E;
-    
-        /* 강조색: 전기 호박색 */
+        /* 표면: 중립 그래파이트 램프 */
+        --bg-base:    #141415;   /* 페이지 */
+        --bg-surface: #19191B;   /* 카드 */
+        --bg-raised:  #232325;   /* 입력 · 버튼 */
+        --bg-hover:   #2B2B2E;   /* 호버 */
+        --bg-work:    #0F0F10;   /* 미리보기 작업면 */
+
+        /* 헤어라인: 본문 글자색의 8% / 14% */
+        --border:     rgba(237, 237, 237, 0.08);
+        --border-2:   rgba(237, 237, 237, 0.14);
+
+        /* 글자 3단계 */
+        --txt:        #EDEDED;
+        --txt-2:      #A1A1A6;
+        --txt-3:      #85858B;
+
+        /* 포인트: 호박색. 선택 · 토글 · 포커스에만 */
         --accent:     #F0A500;
-        --accent-dim: rgba(240,165,0,0.12);
-        --accent-2:   #C98A00;
-    
+        --accent-ink: #F0A500;                 /* 표면 위 글자로 쓸 때 */
+        --accent-dim: rgba(240, 165, 0, 0.12);
+        --on-accent:  #171717;
+
         /* 시맨틱 */
-        --success:    #1FD6A0;
-        --error:      #F05252;
-        --info:       #4AA8FF;
-    
-        /* 그림자 */
-        --shadow-sm:  0 1px 4px rgba(0,0,0,0.4);
-        --shadow:     0 4px 16px rgba(0,0,0,0.5);
-        --shadow-lg:  0 12px 40px rgba(0,0,0,0.6);
-    
-        /* 타이포 */
-        --font-head: 'Syne', sans-serif;
-        --font-mono: 'DM Mono', monospace;
-    
+        --success:    #4CC38A;
+        --error:      #E5484D;
+
+        /* 깊이: 다크에서는 표면 단계와 헤어라인으로. 라벨지만 그림자 */
+        --shadow-card:  none;
+        --shadow-label: 0 8px 24px rgba(0, 0, 0, 0.4);
+        --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+        /* 글꼴 */
+        --font-ui:  'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Noto Sans KR', sans-serif;
+        --font-fig: 'OCR-B', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
         /* 형태 */
-        --radius:    10px;
-        --radius-sm: 6px;
-        --radius-lg: 16px;
-    
-        /* 트랜지션 */
-        --t: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        --radius-sm: 4px;    /* 라벨 · 작은 요소 */
+        --radius:    8px;    /* 입력 · 버튼 */
+        --radius-lg: 16px;   /* 카드 */
+
+        /* 모션: 곡선 하나, 길이 둘 */
+        --ease:   cubic-bezier(0.22, 1, 0.36, 1);
+        --t:      150ms var(--ease);
+        --t-slow: 400ms var(--ease);
     }
-    
+
     /* ═══════════════════════════════════════
         2. 라이트 테마
     ═══════════════════════════════════════ */
     [data-theme="light"] {
-        --bg-base:    #F0F4F8;
+        --bg-base:    #FAFAFA;
         --bg-surface: #FFFFFF;
-        --bg-raised:  #EDF2F7;
-        --bg-hover:   #E2E9F0;
-        --border:     #CBD5E1;
-        --border-2:   #B0BEC5;
-        --txt:        #0F1E2D;
-        --txt-2:      #4A6070;
-        --txt-3:      #8099AA;
-        --accent:     #D4900A;
-        --accent-dim: rgba(212,144,10,0.10);
-        --accent-2:   #A87000;
-        --shadow-sm:  0 1px 4px rgba(0,0,0,0.08);
-        --shadow:     0 4px 16px rgba(0,0,0,0.10);
-        --shadow-lg:  0 12px 40px rgba(0,0,0,0.14);
+        --bg-raised:  #F4F4F5;
+        --bg-hover:   #EAEAEC;
+        --bg-work:    #EDEDEF;
+        --border:     rgba(23, 23, 23, 0.08);
+        --border-2:   rgba(23, 23, 23, 0.14);
+        --txt:        #171717;
+        --txt-2:      #525252;
+        --txt-3:      #737373;
+        --accent-ink: #8A5A00;
+        --accent-dim: rgba(240, 165, 0, 0.14);
+        --success:    #16A34A;
+        --error:      #DC2626;
+        --shadow-card:  0 1px 2px rgba(0, 0, 0, 0.05);
+        --shadow-label: 0 1px 2px rgba(0, 0, 0, 0.05), 0 8px 24px rgba(0, 0, 0, 0.06);
+        --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.06);
     }
-    
+
     /* ═══════════════════════════════════════
         3. OS 자동 감지 폴백 (JS 토글 전)
     ═══════════════════════════════════════ */
     @media (prefers-color-scheme: light) {
         :root:not([data-theme="dark"]) {
-        --bg-base:    #F0F4F8;
+        --bg-base:    #FAFAFA;
         --bg-surface: #FFFFFF;
-        --bg-raised:  #EDF2F7;
-        --bg-hover:   #E2E9F0;
-        --border:     #CBD5E1;
-        --border-2:   #B0BEC5;
-        --txt:        #0F1E2D;
-        --txt-2:      #4A6070;
-        --txt-3:      #8099AA;
-        --accent:     #D4900A;
-        --accent-dim: rgba(212,144,10,0.10);
-        --accent-2:   #A87000;
-        --shadow-sm:  0 1px 4px rgba(0,0,0,0.08);
-        --shadow:     0 4px 16px rgba(0,0,0,0.10);
-        --shadow-lg:  0 12px 40px rgba(0,0,0,0.14);
+        --bg-raised:  #F4F4F5;
+        --bg-hover:   #EAEAEC;
+        --bg-work:    #EDEDEF;
+        --border:     rgba(23, 23, 23, 0.08);
+        --border-2:   rgba(23, 23, 23, 0.14);
+        --txt:        #171717;
+        --txt-2:      #525252;
+        --txt-3:      #737373;
+        --accent-ink: #8A5A00;
+        --accent-dim: rgba(240, 165, 0, 0.14);
+        --success:    #16A34A;
+        --error:      #DC2626;
+        --shadow-card:  0 1px 2px rgba(0, 0, 0, 0.05);
+        --shadow-label: 0 1px 2px rgba(0, 0, 0, 0.05), 0 8px 24px rgba(0, 0, 0, 0.06);
+        --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.06);
         }
     }
-    
+
     /* ═══════════════════════════════════════
         4. 리셋 & 기본
     ═══════════════════════════════════════ */
@@ -116,42 +124,58 @@
         margin: 0;
         padding: 0;
     }
-    
+
     html {
-        scroll-behavior: smooth;
         -webkit-text-size-adjust: 100%;
     }
-    
+
     body {
         background: var(--bg-base);
         color: var(--txt);
-        font-family: var(--font-mono);
-        font-size: 13.5px;
-        line-height: 1.6;
+        font-family: var(--font-ui);
+        font-size: 14px;
+        line-height: 20px;
         min-height: 100vh;
-        transition: background var(--t), color var(--t);
-    
-        /* 미세 도트 패턴 배경 */
-        background-image: radial-gradient(var(--border) 1px, transparent 1px);
-        background-size: 28px 28px;
+        word-break: keep-all;
+        -webkit-font-smoothing: antialiased;
     }
-    
+
     button {
-        font-family: var(--font-mono);
+        font-family: inherit;
+        font-size: inherit;
+        color: inherit;
         cursor: pointer;
         border: none;
         background: none;
     }
-    
-    input { font-family: var(--font-mono); }
-    
+
+    input { font-family: inherit; }
+
     /* 포커스 링 (접근성) */
     :focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 2px;
         border-radius: var(--radius-sm);
     }
-    
+
+    /* 아이콘: 한 세트, 16px, 선 굵기 1.5, 글자색을 따름 */
+    .icon {
+        width: 16px;
+        height: 16px;
+        flex: none;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    /* 수치 · 형식 이름: 바코드와 같은 OCR-B */
+    .figure {
+        font-family: var(--font-fig);
+        font-variant-numeric: tabular-nums;
+    }
+
     /* ═══════════════════════════════════════
         5. 헤더
     ═══════════════════════════════════════ */
@@ -159,80 +183,39 @@
         position: sticky;
         top: 0;
         z-index: 200;
-        background: rgba(7,16,26,0.85);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
+        background: var(--bg-base);
         border-bottom: 1px solid var(--border);
-        transition: background var(--t);
     }
-    
-    [data-theme="light"] .header {
-        background: rgba(240,244,248,0.88);
-    }
-    
+
     .header__inner {
         max-width: 1240px;
         margin: 0 auto;
-        padding: 0 28px;
-        height: 58px;
+        padding: 0 32px;
+        height: 56px;
         display: flex;
         align-items: center;
         justify-content: space-between;
     }
-    
+
     .header__logo {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
-    
-    /* 로고 바코드 아이콘 */
-    .header__logo-bars {
-        display: flex;
-        align-items: flex-end;
-        gap: 2px;
-        height: 22px;
+
+    .header__logo-mark {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
     }
-    
-    .header__logo-bars span {
-        display: block;
-        width: 3px;
-        background: var(--accent);
-        border-radius: 1px;
-        animation: barPulse 2s ease-in-out infinite;
-    }
-    
-    .header__logo-bars span:nth-child(1) { height: 100%; animation-delay: 0s; }
-    .header__logo-bars span:nth-child(2) { height: 60%; animation-delay: 0.1s; }
-    .header__logo-bars span:nth-child(3) { height: 100%; animation-delay: 0.2s; }
-    .header__logo-bars span:nth-child(4) { height: 75%; animation-delay: 0.3s; }
-    .header__logo-bars span:nth-child(5) { height: 100%; animation-delay: 0.15s; }
-    
-    @keyframes barPulse {
-        0%, 100% { opacity: 1; }
-        50%       { opacity: 0.5; }
-    }
-    
+
     .header__logo-text {
-        font-family: var(--font-head);
-        font-weight: 800;
-        font-size: 17px;
-        letter-spacing: -0.03em;
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 1;
         color: var(--txt);
     }
-    
-    .header__badge {
-        background: var(--accent-dim);
-        color: var(--accent);
-        border: 1px solid var(--accent);
-        border-radius: 4px;
-        font-size: 10px;
-        font-weight: 500;
-        padding: 1px 7px;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-    }
-    
+
     /* ═══════════════════════════════════════
         6. 테마 토글 버튼
     ═══════════════════════════════════════ */
@@ -241,236 +224,207 @@
         height: 36px;
         border-radius: 50%;
         background: var(--bg-raised);
-        border: 1px solid var(--border);
-        font-size: 15px;
+        border: 1px solid var(--border-2);
+        color: var(--txt-2);
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: background var(--t), transform 0.2s;
+        transition: background-color var(--t), color var(--t);
     }
-    
+
+    .theme-toggle:focus-visible { border-radius: 50%; }
+
     .theme-toggle:hover {
         background: var(--bg-hover);
-        transform: rotate(12deg) scale(1.08);
-    }
-    
-    /* ═══════════════════════════════════════
-        7. 히어로
-    ═══════════════════════════════════════ */
-    .hero {
-        text-align: center;
-        padding: 56px 24px 40px;
-        max-width: 640px;
-        margin: 0 auto;
-    }
-    
-    .hero__eyebrow {
-        display: inline-block;
-        font-size: 11px;
-        font-weight: 500;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: var(--accent);
-        background: var(--accent-dim);
-        border: 1px solid rgba(240,165,0,0.25);
-        padding: 4px 14px;
-        border-radius: 20px;
-        margin-bottom: 18px;
-    }
-    
-    .hero__title {
-        font-family: var(--font-head);
-        font-weight: 800;
-        font-size: clamp(28px, 5.5vw, 46px);
-        letter-spacing: -0.04em;
-        line-height: 1.1;
-        margin-bottom: 14px;
         color: var(--txt);
     }
-    
-    .hero__desc {
-        color: var(--txt-2);
-        font-size: 13px;
-        line-height: 1.8;
-        letter-spacing: 0.02em;
-    }
-    
+
+    .theme-toggle__icon { display: flex; }
+
+    /* 다크일 때는 해, 라이트일 때는 달 (바꿀 테마를 보여 준다) */
+    .icon--moon { display: none; }
+    [data-theme="light"] .icon--sun  { display: none; }
+    [data-theme="light"] .icon--moon { display: block; }
+
     /* ═══════════════════════════════════════
-        8. 앱 레이아웃 (2열 그리드)
+        7. 페이지 제목
     ═══════════════════════════════════════ */
     .main {
         max-width: 1240px;
         margin: 0 auto;
-        padding: 0 24px 80px;
+        padding: 0 32px 64px;
     }
-    
+
+    .hero {
+        padding: 40px 0 24px;
+    }
+
+    .hero__title {
+        font-weight: 500;
+        font-size: 28px;
+        line-height: 32px;
+        color: var(--txt);
+    }
+
+    .hero__desc {
+        margin-top: 8px;
+        max-width: 640px;
+        color: var(--txt-2);
+        font-size: 14px;
+        line-height: 24px;
+    }
+
+    /* ═══════════════════════════════════════
+        8. 앱 레이아웃 (2열 그리드)
+    ═══════════════════════════════════════ */
     .app {
         display: grid;
-        grid-template-columns: 300px 1fr;
-        gap: 20px;
+        grid-template-columns: 320px 1fr;
+        gap: 24px;
         align-items: start;
+        animation: rise var(--t-slow) both;
     }
-    
+
+    @keyframes rise {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .app { animation: none; }
+    }
+
     /* ═══════════════════════════════════════
-        9. 패널
+        9. 패널과 카드
     ═══════════════════════════════════════ */
-    .panel {
+    .panel--right {
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 24px;
+        min-width: 0;
     }
-    
-    /* ═══════════════════════════════════════
-        10. 카드
-    ═══════════════════════════════════════ */
-    .card {
+
+    .card,
+    .panel--left {
         background: var(--bg-surface);
         border: 1px solid var(--border);
         border-radius: var(--radius-lg);
-        padding: 20px 22px;
-        box-shadow: var(--shadow-sm);
-        transition: background var(--t), border-color var(--t), box-shadow var(--t);
+        box-shadow: var(--shadow-card);
     }
-    
-    .card:hover {
-        box-shadow: var(--shadow);
-        border-color: var(--border-2);
-    }
-    
-    /* 카드 제목 */
-    .card__title {
-        font-family: var(--font-head);
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--txt-3);
-        margin-bottom: 16px;
+
+    .card { padding: 20px; }
+
+    .card__title,
+    .group__title {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: 8px;
+        margin-bottom: 12px;
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 500;
+        color: var(--txt-2);
     }
-    
-    /* 카드 번호 배지 */
-    .card__num {
-        background: var(--bg-raised);
-        border: 1px solid var(--border);
-        color: var(--accent);
-        font-size: 9px;
-        font-weight: 700;
-        padding: 1px 6px;
-        border-radius: 3px;
-        letter-spacing: 0.05em;
+
+    /* 설정 패널: 카드 하나, 헤어라인으로 나눈 네 묶음 */
+    .group {
+        padding: 20px;
+        border-top: 1px solid var(--border);
     }
-    
+
+    .group:first-child { border-top: 0; }
+
     /* ═══════════════════════════════════════
-        11. 바코드 타입 선택
+        10. 바코드 타입 선택
     ═══════════════════════════════════════ */
     .type-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
     }
-    
+
     .type-btn {
         background: var(--bg-raised);
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 12px 14px;
+        padding: 8px 12px;
         text-align: left;
-        transition: all var(--t);
         color: var(--txt);
-        position: relative;
-        overflow: hidden;
+        transition: background-color var(--t), border-color var(--t), transform var(--t);
     }
-    
-    .type-btn::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: var(--accent);
-        opacity: 0;
-        transition: opacity var(--t);
-    }
-    
-    .type-btn:hover {
-        border-color: var(--accent);
-        background: var(--accent-dim);
-    }
-    
+
+    .type-btn:hover { background: var(--bg-hover); }
+    .type-btn:active { transform: scale(0.98); }
+
+    /* 선택: 포인트 색 헤어라인과 옅은 면 */
     .type-btn.active {
-        background: var(--accent);
+        background: var(--accent-dim);
         border-color: var(--accent);
-        color: #000;
-        box-shadow: 0 0 16px rgba(240,165,0,0.3);
     }
-    
+
     .type-btn__name {
         display: block;
-        font-family: var(--font-head);
-        font-weight: 700;
-        font-size: 13px;
-        letter-spacing: -0.02em;
-        margin-bottom: 2px;
+        font-family: var(--font-fig);
+        font-size: 14px;
+        line-height: 20px;
     }
-    
+
     .type-btn__info {
         display: block;
-        font-size: 10.5px;
-        opacity: 0.65;
+        font-size: 12px;
+        line-height: 16px;
+        color: var(--txt-3);
     }
-    
+
     /* ═══════════════════════════════════════
-        12. 텍스트 입력
+        11. 텍스트 입력
     ═══════════════════════════════════════ */
-    .input-wrap { display: flex; flex-direction: column; gap: 7px; }
-    
-    .input-label {
-        font-size: 11px;
-        font-weight: 500;
-        color: var(--txt-2);
-        letter-spacing: 0.04em;
-    }
-    
+    .input-wrap { display: flex; flex-direction: column; gap: 8px; }
+
     .input-box {
         position: relative;
         display: flex;
         align-items: center;
     }
-    
+
     .input-field {
         width: 100%;
+        height: 40px;
         background: var(--bg-raised);
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 10px 40px 10px 14px;
+        padding: 0 40px 0 12px;
         color: var(--txt);
-        font-size: 14px;
-        font-family: var(--font-mono);
-        transition: border-color var(--t), box-shadow var(--t);
+        font-family: var(--font-fig);
+        font-size: 15px;
         outline: none;
+        transition: border-color var(--t), box-shadow var(--t);
     }
-    
+
+    .input-field::placeholder {
+        font-family: var(--font-ui);
+        font-size: 14px;
+        color: var(--txt-3);
+    }
+
     .input-field:focus {
         border-color: var(--accent);
         box-shadow: 0 0 0 3px var(--accent-dim);
     }
-    
+
     .input-field.error {
         border-color: var(--error);
-        box-shadow: 0 0 0 3px rgba(240,82,82,0.12);
+        box-shadow: none;
     }
-    
+
     .input-clear {
         position: absolute;
-        right: 10px;
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        background: var(--bg-hover);
-        border: 1px solid var(--border);
-        color: var(--txt-2);
-        font-size: 10px;
+        right: 8px;
+        width: 24px;
+        height: 24px;
+        border-radius: var(--radius-sm);
+        color: var(--txt-3);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -478,242 +432,201 @@
         /* Bug #5 수정: opacity:0 상태에서도 클릭 이벤트가 발생하는 문제 수정.
         pointer-events: none으로 투명 상태에서 클릭을 차단합니다. */
         pointer-events: none;
-        transition: opacity var(--t);
+        transition: opacity var(--t), background-color var(--t), color var(--t);
     }
-    
+
+    .input-clear:hover {
+        background: var(--bg-hover);
+        color: var(--txt);
+    }
+
     .input-field:not(:placeholder-shown) ~ .input-clear {
         opacity: 1;
         pointer-events: auto; /* 값 있을 때만 클릭 가능 */
     }
-    
-    .input-hint {
-        font-size: 11px;
-        color: var(--txt-3);
-        line-height: 1.5;
-    }
-    
+
+    .input-hint,
     .input-error {
-        font-size: 11px;
+        font-size: 12px;
+        line-height: 16px;
+    }
+
+    .input-hint { color: var(--txt-3); }
+
+    .input-error {
         color: var(--error);
         display: none;
-        align-items: center;
-        gap: 5px;
     }
-    
-    .input-error.visible {
-        display: flex;
-    }
-    
-    .input-error::before { content: '⚠'; }
-    
+
+    .input-error.visible { display: block; }
+
     /* ═══════════════════════════════════════
-        13. 숫자 입력 (크기 & 여백)
+        12. 설정 행 (치수 · 색상 · 표시)
+        라벨은 한 줄에, 값은 오른쪽 한 열에 맞춘다
     ═══════════════════════════════════════ */
-    .num-item {
+    .row {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        margin-bottom: 14px;
+        min-height: 36px;
+        margin-bottom: 8px;
     }
-    
-    .num-item:last-child { margin-bottom: 0; }
-    
-    .num-label {
-        font-size: 14px;
-        color: var(--txt-2);
+
+    .row:last-child { margin-bottom: 0; }
+
+    .row__label {
+        font-size: 16px;
+        line-height: 24px;
+        color: var(--txt);
         flex-shrink: 0;
     }
-    
+
     .num-wrap {
         display: flex;
         align-items: center;
         gap: 8px;
     }
-    
+
     .num-field {
-        width: 96px;
+        width: 80px;
+        height: 36px;
         background: var(--bg-raised);
         border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 10px 12px;
-        font-size: 18px;
-        font-weight: 500;
-        font-family: var(--font-mono);
-        color: var(--txt-1);
+        border-radius: var(--radius);
+        padding: 0 12px;
+        font-family: var(--font-fig);
+        font-size: 15px;
+        font-variant-numeric: tabular-nums;
+        color: var(--txt);
         text-align: right;
         outline: none;
         -moz-appearance: textfield;
+        transition: border-color var(--t), box-shadow var(--t);
     }
-    
+
     .num-field::-webkit-outer-spin-button,
     .num-field::-webkit-inner-spin-button {
         -webkit-appearance: none;
         margin: 0;
     }
-    
+
     .num-field:focus {
         border-color: var(--accent);
         box-shadow: 0 0 0 3px var(--accent-dim);
     }
-    
+
     .num-unit {
-        font-size: 14px;
+        width: 20px;
+        font-size: 13px;
         color: var(--txt-3);
-        font-family: var(--font-mono);
-        min-width: 24px;
     }
-    
-    /* ═══════════════════════════════════════
-        14. 색상 피커
-    ═══════════════════════════════════════ */
-    .color-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 14px;
-    }
-    
-    .color-item:last-of-type { margin-bottom: 0; }
-    
-    .color-label {
-        font-size: 11.5px;
-        color: var(--txt-2);
-    }
-    
+
     .color-right {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 12px;
     }
-    
+
     .color-hex {
-        font-size: 11px;
-        font-family: var(--font-mono);
-        color: var(--txt-3);
-        background: var(--bg-raised);
-        border: 1px solid var(--border);
-        padding: 3px 8px;
-        border-radius: 4px;
-        letter-spacing: 0.05em;
+        font-family: var(--font-fig);
+        font-size: 13px;
+        color: var(--txt-2);
     }
-    
+
     .color-picker {
-        width: 34px;
-        height: 30px;
-        border: 1px solid var(--border);
+        width: 36px;
+        height: 28px;
+        border: 1px solid var(--border-2);
         border-radius: var(--radius-sm);
         cursor: pointer;
         padding: 2px;
         background: var(--bg-raised);
-        transition: transform 0.15s;
     }
-    
-    .color-picker:hover { transform: scale(1.1); }
-    
+
     /* ═══════════════════════════════════════
-        15. 토글 스위치
+        13. 토글 스위치
     ═══════════════════════════════════════ */
-    .toggle-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-top: 16px;
-        padding-top: 14px;
-        border-top: 1px solid var(--border);
-    }
-    
-    .toggle-label { font-size: 11.5px; color: var(--txt-2); }
-    
     .toggle {
         position: relative;
         display: inline-block;
-        width: 44px;
+        width: 40px;
         height: 24px;
         cursor: pointer;
     }
-    
+
     .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
-    
+
     .toggle__track {
         position: absolute;
         inset: 0;
-        background: var(--bg-raised);
-        border: 1px solid var(--border);
-        border-radius: 24px;
-        transition: background var(--t), border-color var(--t);
+        background: var(--bg-hover);
+        border-radius: 12px;
+        transition: background-color var(--t);
     }
-    
+
     .toggle__thumb {
         position: absolute;
-        top: 3px;
-        left: 3px;
+        top: 4px;
+        left: 4px;
         width: 16px;
         height: 16px;
-        background: var(--txt-3);
+        background: var(--txt-2);
         border-radius: 50%;
-        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background var(--t);
+        transition: transform var(--t), background-color var(--t);
     }
-    
-    .toggle input:checked + .toggle__track {
-        background: var(--accent);
-        border-color: var(--accent);
-    }
-    
+
+    .toggle input:checked + .toggle__track { background: var(--accent); }
+
     .toggle input:checked + .toggle__track .toggle__thumb {
-        transform: translateX(20px);
-        background: #000;
+        transform: translateX(16px);
+        background: var(--on-accent);
     }
-    
+
+    .toggle input:focus-visible + .toggle__track {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+
     /* ═══════════════════════════════════════
-        16. 미리보기 영역
+        14. 미리보기 — 이 화면의 주인공
+        회색 작업면 위에 라벨지 한 장
     ═══════════════════════════════════════ */
-    .preview-card { position: relative; }
-    
     .preview-type-badge {
-        margin-left: auto;
-        background: var(--accent-dim);
-        color: var(--accent);
-        border: 1px solid rgba(240,165,0,0.3);
-        font-size: 10px;
-        padding: 2px 8px;
-        border-radius: 4px;
-        letter-spacing: 0.06em;
+        font-family: var(--font-fig);
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--txt-3);
     }
-    
+
     .preview-area {
         position: relative;
-        min-height: 200px;
+        min-height: 360px;
+        padding: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--bg-raised);
-        border: 1px solid var(--border);
+        background: var(--bg-work);
         border-radius: var(--radius);
         overflow: hidden;
-    
-        /* 체커보드 — 배경 투명도 시각화 */
-        background-image:
-        linear-gradient(45deg, var(--border) 25%, transparent 25%),
-        linear-gradient(-45deg, var(--border) 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, var(--border) 75%),
-        linear-gradient(-45deg, transparent 75%, var(--border) 75%);
-        background-size: 14px 14px;
-        background-position: 0 0, 0 7px, 7px -7px, -7px 0px;
-        background-color: var(--bg-raised);
     }
-    
+
+    /* 바코드 SVG가 곧 라벨지 */
     #barcodeSvg {
         position: relative;
         z-index: 1;
         max-width: 100%;
-        transition: opacity 0.18s;
         display: block;
+        border-radius: 2px;
+        box-shadow: var(--shadow-label);
+        transition: opacity var(--t);
     }
-    
+
+    #barcodeSvg:empty { visibility: hidden; }
+
     /* 바코드 생성 중 페이드 효과 */
     #barcodeSvg.updating { opacity: 0.3; }
-    
+
     /* 빈 상태 안내 */
     .preview-placeholder {
         position: absolute;
@@ -722,231 +635,160 @@
         레이아웃 계산이 불완전해 깜빡임이 발생할 수 있습니다.
         초기값을 flex로 명시하고, JS에서 'none'/'flex'로 토글합니다. */
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 14px;
+        padding: 32px;
+        text-align: center;
         color: var(--txt-3);
-        font-size: 12px;
-        letter-spacing: 0.03em;
+        font-size: 14px;
     }
-    
-    .preview-placeholder__bars {
-        display: flex;
-        align-items: flex-end;
-        gap: 3px;
-        height: 44px;
-        opacity: 0.35;
-    }
-    
-    .preview-placeholder__bars span {
-        display: block;
-        width: 4px;
-        background: var(--txt-3);
-        border-radius: 1px;
-    }
-    
-    .preview-placeholder__bars span:nth-child(1) { height: 100%; }
-    .preview-placeholder__bars span:nth-child(2) { height: 55%; }
-    .preview-placeholder__bars span:nth-child(3) { height: 85%; }
-    .preview-placeholder__bars span:nth-child(4) { height: 70%; }
-    .preview-placeholder__bars span:nth-child(5) { height: 100%; }
-    .preview-placeholder__bars span:nth-child(6) { height: 60%; }
-    .preview-placeholder__bars span:nth-child(7) { height: 90%; }
-    .preview-placeholder__bars span:nth-child(8) { height: 100%; }
-    
+
     /* ═══════════════════════════════════════
-        17. 다운로드 그리드
+        15. 다운로드
     ═══════════════════════════════════════ */
     .dl-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         gap: 8px;
     }
-    
-    /* 기본 다운로드 버튼 */
+
     .dl-btn {
+        min-height: 80px;
         background: var(--bg-raised);
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 14px 8px 12px;
+        padding: 12px 8px;
+        gap: 4px;
         color: var(--txt);
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 4px;
-        transition: all var(--t);
-        position: relative;
-        overflow: hidden;
+        justify-content: center;
+        transition: background-color var(--t), border-color var(--t), transform var(--t), opacity var(--t);
     }
-    
-    .dl-btn::before {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: var(--accent);
-        transform: scaleX(0);
-        transition: transform var(--t);
-    }
-    
+
     .dl-btn:hover:not(:disabled) {
-        border-color: var(--border-2);
         background: var(--bg-hover);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow);
+        border-color: var(--border-2);
     }
-    
-    .dl-btn:hover:not(:disabled)::before { transform: scaleX(1); }
-    
-    .dl-btn:active:not(:disabled) { transform: translateY(0); }
-    
+
+    .dl-btn:active:not(:disabled) { transform: scale(0.98); }
+
     .dl-btn:disabled {
-        opacity: 0.35;
+        opacity: 0.4;
         cursor: not-allowed;
-        transform: none;
     }
-    
-    /* 벡터 버튼 강조 */
-    .dl-btn--vector {
-        background: rgba(74,168,255,0.06);
-        border-color: rgba(74,168,255,0.2);
-    }
-    
-    .dl-btn--vector::before { background: var(--info); }
-    
-    .dl-btn--vector:hover:not(:disabled) {
-        border-color: var(--info);
-        background: rgba(74,168,255,0.12);
-    }
-    
-    /* EPS 특별 강조 */
-    .dl-btn--eps {
-        background: rgba(240,165,0,0.07);
-        border-color: rgba(240,165,0,0.25);
-    }
-    
-    .dl-btn--eps::before { background: var(--accent); }
-    
-    .dl-btn--eps:hover:not(:disabled) {
-        border-color: var(--accent);
-        background: var(--accent-dim);
-    }
-    
-    /* 문서 버튼 */
-    .dl-btn--doc {
-        background: rgba(31,214,160,0.05);
-        border-color: rgba(31,214,160,0.15);
-    }
-    
-    .dl-btn--doc::before { background: var(--success); }
-    
-    .dl-btn--doc:hover:not(:disabled) {
-        border-color: var(--success);
-        background: rgba(31,214,160,0.1);
-    }
-    
+
     /* 인쇄 버튼 (풀 너비) */
     .dl-btn--print {
         grid-column: 1 / -1;
+        min-height: 52px;
         flex-direction: row;
-        justify-content: center;
         gap: 8px;
-        padding: 12px;
+        background: transparent;
+        font-size: 16px;
+        font-weight: 500;
     }
-    
-    /* 버튼 내부 텍스트 */
+
     .dl-btn__fmt {
-        font-family: var(--font-head);
-        font-weight: 700;
-        font-size: 14px;
-        letter-spacing: -0.01em;
+        font-family: var(--font-fig);
+        font-size: 20px;
+        line-height: 28px;
     }
-    
+
     .dl-btn__desc {
-        font-size: 10px;
-        color: var(--txt-3);
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--txt-2);
     }
-    
+
     /* EPS 안내 문구 */
     .eps-note {
-        margin-top: 12px;
-        font-size: 10.5px;
+        margin-top: 16px;
+        font-size: 14px;
+        line-height: 24px;
         color: var(--txt-3);
-        line-height: 1.6;
-        padding: 10px 12px;
-        background: var(--bg-raised);
-        border: 1px solid var(--border);
-        border-left: 3px solid var(--accent);
-        border-radius: var(--radius-sm);
     }
-    
+
     /* ═══════════════════════════════════════
-        18. 토스트 알림
+        16. 토스트 알림
     ═══════════════════════════════════════ */
     .toast {
         position: fixed;
-        bottom: 28px;
-        right: 28px;
+        bottom: 24px;
+        right: 24px;
         z-index: 999;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        max-width: 320px;
         background: var(--bg-surface);
         color: var(--txt);
-        border: 1px solid var(--border);
+        border: 1px solid var(--border-2);
         border-radius: var(--radius);
-        padding: 11px 20px;
-        font-size: 13px;
-        font-weight: 500;
-        box-shadow: var(--shadow-lg);
+        padding: 12px 16px;
+        font-size: 14px;
+        box-shadow: var(--shadow-float);
         opacity: 0;
-        transform: translateY(10px) scale(0.96);
-        transition: opacity 0.25s, transform 0.25s;
+        transform: translateY(8px);
+        transition: opacity var(--t), transform var(--t);
         pointer-events: none;
-        max-width: 320px;
     }
-    
+
     .toast.visible {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
     }
-    
-    .toast.success {
-        background: var(--success);
-        color: #000;
-        border-color: var(--success);
+
+    /* 상태는 작은 점 하나로 */
+    .toast.success::before,
+    .toast.error::before {
+        content: '';
+        flex: none;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
     }
-    
-    .toast.error {
-        background: var(--error);
-        color: #fff;
-        border-color: var(--error);
-    }
-    
+
+    .toast.success::before { background: var(--success); }
+    .toast.error::before   { background: var(--error); }
+
     /* ═══════════════════════════════════════
-        19. 푸터
+        17. 푸터
     ═══════════════════════════════════════ */
     .footer {
-        text-align: center;
-        padding: 28px 24px;
-        color: var(--txt-3);
-        font-size: 11.5px;
         border-top: 1px solid var(--border);
-        letter-spacing: 0.02em;
     }
-    
+
+    .footer__inner {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 24px 32px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--txt-3);
+        font-size: 12px;
+        line-height: 16px;
+    }
+
+    .footer__mark {
+        width: 16px;
+        height: 16px;
+        object-fit: contain;
+    }
+
     /* ═══════════════════════════════════════
-        20. 인쇄 전용 스타일
+        18. 인쇄 전용 스타일
     ═══════════════════════════════════════ */
     .print-only { display: none; }
-    
+
     @media print {
         body {
         background: #fff !important;
         color: #000 !important;
-        background-image: none !important;
         }
-    
+
         .header,
         .hero,
         .panel--left,
@@ -956,25 +798,26 @@
         .toast {
         display: none !important;
         }
-    
+
         .main { padding: 0 !important; }
-        .app  { display: block !important; }
-    
+        .app  { display: block !important; animation: none !important; }
+
         .preview-card {
         border: none !important;
         box-shadow: none !important;
         padding: 0 !important;
         }
-    
+
         .preview-area {
         background: none !important;
-        background-image: none !important;
         border: none !important;
         min-height: auto !important;
         padding: 0 !important;
         display: block !important;
         }
-    
+
+        #barcodeSvg { box-shadow: none !important; }
+
         .print-only {
         display: flex !important;
         justify-content: center;
@@ -982,76 +825,59 @@
         padding: 40px;
         min-height: 100vh;
         }
-    
+
         .card__title, .preview-type-badge { display: none !important; }
     }
-    
+
     /* ═══════════════════════════════════════
-        21. 애니메이션 — 카드 진입
+        19. 반응형 — 태블릿
     ═══════════════════════════════════════ */
-    @keyframes slideUp {
-        from { opacity: 0; transform: translateY(14px); }
-        to   { opacity: 1; transform: translateY(0); }
+    @media (max-width: 1100px) {
+        .dl-grid { grid-template-columns: repeat(3, 1fr); }
     }
-    
-    .card {
-        animation: slideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-    
-    #cardType   { animation-delay: 0.05s; }
-    #cardInput  { animation-delay: 0.10s; }
-    #cardSize   { animation-delay: 0.15s; }
-    #cardStyle  { animation-delay: 0.20s; }
-    .preview-card { animation-delay: 0.08s; }
-    
-    /* ═══════════════════════════════════════
-        22. 반응형 — 태블릿
-    ═══════════════════════════════════════ */
+
     @media (max-width: 960px) {
-        .app {
-        grid-template-columns: 1fr;
-        }
-    
+        .app { grid-template-columns: 1fr; }
+
+        /* 설정 패널을 2열로 */
         .panel--left {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 14px;
         }
-    
-        .dl-grid {
-        grid-template-columns: repeat(3, 1fr);
-        }
+
+        .group:nth-child(2) { border-top: 0; }
+        .group:nth-child(even) { border-left: 1px solid var(--border); }
+
+        .preview-area { min-height: 280px; }
     }
-    
+
     /* ═══════════════════════════════════════
-        23. 반응형 — 모바일
+        20. 반응형 — 모바일
     ═══════════════════════════════════════ */
     @media (max-width: 600px) {
         .header__inner { padding: 0 16px; }
-        .main { padding: 0 14px 60px; }
-        .hero { padding: 36px 16px 28px; }
-    
-        .panel--left {
-        grid-template-columns: 1fr;
-        }
-    
-        .dl-grid {
-        grid-template-columns: repeat(2, 1fr);
-        }
-    
+        .main { padding: 0 16px 48px; }
+        .hero { padding: 24px 0 16px; }
+        .hero__title { font-size: 24px; line-height: 28px; }
+        .footer__inner { padding: 24px 16px; }
+
+        .app { gap: 16px; }
+        .panel--right { gap: 16px; }
+
+        .panel--left { grid-template-columns: 1fr; }
+        .group:nth-child(2) { border-top: 1px solid var(--border); }
+        .group:nth-child(even) { border-left: 0; }
+
+        .card, .group { padding: 16px; }
+        .preview-area { min-height: 240px; padding: 24px 16px; }
+
+        .dl-grid { grid-template-columns: repeat(2, 1fr); }
         .dl-btn--print { grid-column: 1 / -1; }
-    
+
         .toast {
         bottom: 16px;
         right: 16px;
         left: 16px;
-        text-align: center;
         max-width: none;
         }
-    }
-    
-    @media (max-width: 380px) {
-        .type-grid { grid-template-columns: 1fr 1fr; }
-        .header__logo-text { font-size: 15px; }
-        .header__badge { display: none; }
     }

@@ -54,12 +54,11 @@
     </script>
 
     <!-- ═══════════════════════════════════════
-        Google Fonts: Syne (헤딩) + DM Mono (UI)
-        바코드 하단 숫자(HRI)는 로컬 OCR-B (style.css @font-face)
+        글꼴: Pretendard (UI)
+        수치와 바코드 하단 숫자(HRI)는 로컬 OCR-B (style.css @font-face)
     ═══════════════════════════════════════ -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
 
     <!-- ═══════════════════════════════════════
         외부 라이브러리 (CDN)
@@ -81,12 +80,19 @@
     <header class="header" role="banner">
         <div class="header__inner">
         <div class="header__logo" aria-label="BarcodeKit 홈">
-            <img src="images/caboo_blue_02.png" alt="Caboo" style="width:32px;height:32px;border-radius:8px;object-fit:contain;" aria-hidden="true" />
+            <img class="header__logo-mark" src="images/caboo_blue_02.png" alt="" aria-hidden="true" />
             <span class="header__logo-text">BarcodeKit</span>
-            <span class="header__badge">무료</span>
         </div>
         <button class="theme-toggle" id="themeToggle" aria-label="다크/라이트 모드 전환" title="테마 전환">
-            <span id="themeIcon">☀️</span>
+            <span class="theme-toggle__icon" id="themeIcon">
+            <svg class="icon icon--sun" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="4"/>
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+            </svg>
+            <svg class="icon icon--moon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+            </svg>
+            </span>
         </button>
         </div>
     </header>
@@ -96,15 +102,13 @@
     ═══════════════════════════════════════ -->
     <main class="main" role="main">
 
-        <!-- 히어로 섹션 -->
+        <!-- 페이지 제목 -->
         <section class="hero" aria-labelledby="heroTitle">
-        <div class="hero__eyebrow">온라인 바코드 생성기</div>
-        <h1 class="hero__title" id="heroTitle">
-            바코드를 만들고<br />바로 내보내세요
-        </h1>
+        <h1 class="hero__title" id="heroTitle">바코드 생성기</h1>
         <p class="hero__desc">
-            CODE128 · EAN-13 · UPC-A · CODE39<br />
-            PNG · JPG · SVG · EPS · PDF · Excel — 모두 무료
+            CODE128 · EAN-13 · UPC-A · CODE39 바코드를
+            PNG · JPG · SVG · EPS · PDF · Excel로 내보냅니다.
+            무료이고, 입력한 값은 서버로 보내지 않습니다.
         </p>
         </section>
 
@@ -116,11 +120,9 @@
         _________________________________________-->
         <aside class="panel panel--left" aria-label="바코드 설정">
 
-            <!-- 카드 1: 바코드 타입 -->
-            <div class="card" id="cardType">
-            <h2 class="card__title">
-                <span class="card__num">01</span> 바코드 타입
-            </h2>
+            <!-- 1: 바코드 타입 -->
+            <div class="group" id="cardType">
+            <h2 class="group__title">바코드 타입</h2>
             <div class="type-grid" role="group" aria-label="바코드 형식 선택">
                 <button class="type-btn active" data-type="CODE128" aria-pressed="true">
                 <span class="type-btn__name">CODE128</span>
@@ -141,40 +143,37 @@
             </div>
             </div>
 
-            <!-- 카드 2: 데이터 입력 -->
-            <div class="card" id="cardInput">
-            <h2 class="card__title">
-                <span class="card__num">02</span> 데이터 입력
-            </h2>
+            <!-- 2: 데이터 입력 -->
+            <div class="group" id="cardInput">
+            <h2 class="group__title"><label for="barcodeValue">바코드 값</label></h2>
             <div class="input-wrap">
-                <label class="input-label" for="barcodeValue">바코드 값</label>
                 <div class="input-box">
                 <input
                     class="input-field"
                     type="text"
                     id="barcodeValue"
-                    placeholder="값을 입력하세요..."
-                    value="123456789012"
+                    placeholder="바코드 값"
+                    value="880911230001"
                     inputmode="text"
                     aria-describedby="inputHint inputError"
                     autocomplete="off"
                     spellcheck="false"
                 />
-                <button class="input-clear" id="inputClear" aria-label="입력 초기화" title="지우기">✕</button>
+                <button class="input-clear" id="inputClear" aria-label="입력 초기화" title="지우기">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
                 </div>
                 <p class="input-hint" id="inputHint" aria-live="polite">CODE128: 모든 ASCII 문자 허용</p>
                 <p class="input-error" id="inputError" role="alert" aria-live="assertive"></p>
             </div>
             </div>
 
-            <!-- 카드 3: 크기 & 여백 -->
-            <div class="card" id="cardSize">
-            <h2 class="card__title">
-                <span class="card__num">03</span> 크기 &amp; 여백
-            </h2>
+            <!-- 3: 크기와 여백 -->
+            <div class="group" id="cardSize">
+            <h2 class="group__title">크기와 여백</h2>
 
-            <div class="num-item">
-                <label class="num-label" for="barcodeWidth">막대 너비</label>
+            <div class="row">
+                <label class="row__label" for="barcodeWidth">막대 너비</label>
                 <div class="num-wrap">
                 <input class="num-field" type="text" inputmode="decimal" id="barcodeWidth"
                     value="0.05" autocomplete="off" spellcheck="false"
@@ -183,8 +182,8 @@
                 </div>
             </div>
 
-            <div class="num-item">
-                <label class="num-label" for="barcodeHeight">바코드 높이</label>
+            <div class="row">
+                <label class="row__label" for="barcodeHeight">바코드 높이</label>
                 <div class="num-wrap">
                 <input class="num-field" type="text" inputmode="decimal" id="barcodeHeight"
                     value="2.65" autocomplete="off" spellcheck="false"
@@ -193,8 +192,8 @@
                 </div>
             </div>
 
-            <div class="num-item">
-                <label class="num-label" for="barcodeMargin">여백</label>
+            <div class="row">
+                <label class="row__label" for="barcodeMargin">여백</label>
                 <div class="num-wrap">
                 <input class="num-field" type="text" inputmode="decimal" id="barcodeMargin"
                     value="0.26" autocomplete="off" spellcheck="false"
@@ -204,30 +203,28 @@
             </div>
             </div>
 
-            <!-- 카드 4: 색상 & 표시 -->
-            <div class="card" id="cardStyle">
-            <h2 class="card__title">
-                <span class="card__num">04</span> 색상 &amp; 표시
-            </h2>
+            <!-- 4: 색상과 표시 -->
+            <div class="group" id="cardStyle">
+            <h2 class="group__title">색상과 표시</h2>
 
-            <div class="color-item">
-                <label class="color-label" for="fgColor">바코드 색상</label>
+            <div class="row">
+                <label class="row__label" for="fgColor">바코드 색상</label>
                 <div class="color-right">
                 <span class="color-hex" id="fgHex">#000000</span>
                 <input class="color-picker" type="color" id="fgColor" value="#000000" aria-label="바코드 전경색" />
                 </div>
             </div>
 
-            <div class="color-item">
-                <label class="color-label" for="bgColor">배경 색상</label>
+            <div class="row">
+                <label class="row__label" for="bgColor">배경 색상</label>
                 <div class="color-right">
                 <span class="color-hex" id="bgHex">#ffffff</span>
                 <input class="color-picker" type="color" id="bgColor" value="#ffffff" aria-label="배경색" />
                 </div>
             </div>
 
-            <div class="toggle-item">
-                <label class="toggle-label" for="showText">텍스트 표시</label>
+            <div class="row">
+                <label class="row__label" for="showText">텍스트 표시</label>
                 <label class="toggle" aria-label="텍스트 표시 여부 토글">
                 <input type="checkbox" id="showText" checked role="switch" aria-checked="true" />
                 <span class="toggle__track">
@@ -247,7 +244,7 @@
             <!-- 미리보기 카드 -->
             <div class="card preview-card">
             <h2 class="card__title">
-                <span class="card__num">05</span> 미리보기
+                미리보기
                 <span class="preview-type-badge" id="previewTypeBadge">CODE128</span>
             </h2>
 
@@ -257,10 +254,6 @@
 
                 <!-- 빈 상태 안내 -->
                 <div class="preview-placeholder" id="previewPlaceholder" aria-hidden="true">
-                <div class="preview-placeholder__bars">
-                    <span></span><span></span><span></span><span></span>
-                    <span></span><span></span><span></span><span></span>
-                </div>
                 <p>값을 입력하면 바코드가 나타납니다</p>
                 </div>
             </div>
@@ -271,9 +264,7 @@
 
             <!-- 다운로드 카드 -->
             <div class="card">
-            <h2 class="card__title">
-                <span class="card__num">06</span> 다운로드 &amp; 출력
-            </h2>
+            <h2 class="card__title">다운로드와 출력</h2>
 
             <div class="dl-grid">
                 <!-- 래스터 이미지 -->
@@ -287,30 +278,31 @@
                 </button>
 
                 <!-- 벡터 -->
-                <button class="dl-btn dl-btn--vector" id="dlSvg" disabled aria-label="SVG 벡터 파일 다운로드">
+                <button class="dl-btn" id="dlSvg" disabled aria-label="SVG 벡터 파일 다운로드">
                 <span class="dl-btn__fmt">SVG</span>
                 <span class="dl-btn__desc">벡터</span>
                 </button>
-                <button class="dl-btn dl-btn--vector dl-btn--eps" id="dlEps" disabled aria-label="EPS 파일 다운로드 (Adobe Illustrator용)">
+                <button class="dl-btn" id="dlEps" disabled aria-label="EPS 파일 다운로드 (Adobe Illustrator용)">
                 <span class="dl-btn__fmt">EPS</span>
                 <span class="dl-btn__desc">Illustrator</span>
                 </button>
 
                 <!-- 문서 -->
-                <button class="dl-btn dl-btn--doc" id="dlPdf" disabled aria-label="PDF 파일 다운로드">
+                <button class="dl-btn" id="dlPdf" disabled aria-label="PDF 파일 다운로드">
                 <span class="dl-btn__fmt">PDF</span>
                 <span class="dl-btn__desc">문서</span>
                 </button>
-                <button class="dl-btn dl-btn--doc" id="dlExcel" disabled aria-label="Excel 데이터 파일 다운로드">
+                <button class="dl-btn" id="dlExcel" disabled aria-label="Excel 데이터 파일 다운로드">
                 <span class="dl-btn__fmt">XLSX</span>
                 <span class="dl-btn__desc">데이터</span>
                 </button>
 
                 <!-- 인쇄 (풀 너비) -->
                 <button class="dl-btn dl-btn--print" id="btnPrint" disabled aria-label="바코드 인쇄">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                    <rect x="6" y="14" width="12" height="8"/>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                    <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/>
+                    <rect x="6" y="14" width="12" height="8" rx="1"/>
                 </svg>
                 인쇄하기
                 </button>
@@ -318,7 +310,7 @@
 
             <!-- EPS 안내 문구 -->
             <p class="eps-note" id="epsNote">
-                💡 EPS는 Adobe Illustrator에서 바로 열 수 있습니다.
+                EPS는 Adobe Illustrator에서 바로 열 수 있습니다.
                 하단 숫자는 PostScript 표준 Helvetica이며, PNG·JPG·SVG·PDF는 OCR-B입니다.
             </p>
             </div>
@@ -331,8 +323,10 @@
         푸터
     ═══════════════════════════════════════ -->
     <footer class="footer" role="contentinfo">
-        <img src="images/caboo_blue_02.png" alt="Caboo" style="width:20px;height:20px;border-radius:5px;object-fit:contain;vertical-align:middle;margin-right:6px;" />
-        <p>© 2025 BarcodeKit &nbsp;·&nbsp; 서버 저장 없음, 100% 클라이언트 처리 &nbsp;·&nbsp; 무료로 영원히</p>
+        <div class="footer__inner">
+        <img class="footer__mark" src="images/caboo_blue_02.png" alt="Caboo" />
+        <p>© 2025 BarcodeKit · 서버 저장 없음, 100% 클라이언트 처리</p>
+        </div>
     </footer>
 
     <!-- ═══════════════════════════════════════
